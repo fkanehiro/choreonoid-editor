@@ -1,0 +1,134 @@
+# Japanese translations for PACKAGE package.
+# Copyright (C) 2015 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Yosuke Matsusaka <yosuke.matsusaka@gmail.com>, 2015.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-04-13 11:47+0900\n"
+"PO-Revision-Date: 2015-04-13 11:47+0900\n"
+"Last-Translator: Yosuke Matsusaka <yosuke.matsusaka@gmail.com>\n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ASCII\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: EditableModelBase.cpp:51 SensorItem.cpp:323
+msgid "Translation"
+msgstr ""
+
+#: EditableModelBase.cpp:57 SensorItem.cpp:329
+msgid "Rotation (Axis)"
+msgstr ""
+
+#: EditableModelBase.cpp:63 SensorItem.cpp:335
+msgid "Rotation (Matrix)"
+msgstr ""
+
+#: EditableModelItem.cpp:102
+msgid "EditableModelItem"
+msgstr ""
+
+#: EditableModelItem.cpp:105 EditableModelItem.cpp:107
+msgid "OpenHRP Model File for Editing"
+msgstr ""
+
+#: EditableModelItem.cpp:368
+msgid "Model file"
+msgstr ""
+
+#: JointItem.cpp:101
+msgid "JointItem"
+msgstr ""
+
+#: JointItem.cpp:346
+msgid "Joint ID"
+msgstr ""
+
+#: JointItem.cpp:347
+msgid "Joint type"
+msgstr ""
+
+#: JointItem.cpp:351
+msgid "Joint axis"
+msgstr ""
+
+#: JointItem.cpp:353
+msgid "Upper limit"
+msgstr ""
+
+#: JointItem.cpp:354
+msgid "Lower limit"
+msgstr ""
+
+#: JointItem.cpp:356
+msgid "Axis size"
+msgstr ""
+
+#: LinkItem.cpp:101
+msgid "LinkItem"
+msgstr ""
+
+#: LinkItem.cpp:340 PrimitiveShapeItem.cpp:419
+msgid "Mass"
+msgstr ""
+
+#: LinkItem.cpp:341 PrimitiveShapeItem.cpp:420
+msgid "Center of mass"
+msgstr ""
+
+#: LinkItem.cpp:345 PrimitiveShapeItem.cpp:424
+msgid "Inertia"
+msgstr ""
+
+#: PrimitiveShapeItem.cpp:102
+msgid "PrimitiveShapeItem"
+msgstr ""
+
+#: PrimitiveShapeItem.cpp:426
+msgid "Primitive type"
+msgstr ""
+
+#: PrimitiveShapeItem.cpp:430
+msgid "Box size"
+msgstr ""
+
+#: PrimitiveShapeItem.cpp:434
+msgid "Cone radius"
+msgstr ""
+
+#: PrimitiveShapeItem.cpp:435
+msgid "Cone height"
+msgstr ""
+
+#: PrimitiveShapeItem.cpp:438
+msgid "Cylinder radius"
+msgstr ""
+
+#: PrimitiveShapeItem.cpp:439
+msgid "Cylinder height"
+msgstr ""
+
+#: PrimitiveShapeItem.cpp:442
+msgid "Sphere radius"
+msgstr ""
+
+#: PrimitiveShapeItem.cpp:446
+msgid "Color"
+msgstr ""
+
+#: SensorItem.cpp:95
+msgid "SensorItem"
+msgstr ""
+
+#: SensorItem.cpp:337
+msgid "Sensor type"
+msgstr ""
+
+#: SensorItem.cpp:341
+msgid "Camera type"
+msgstr ""
