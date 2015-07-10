@@ -10,7 +10,7 @@
 #include <cnoid/Link>
 #include <cnoid/SceneProvider>
 #include <cnoid/VRML>
-#include <cnoid/AbstractBodyLoader>
+#include <cnoid/VRMLBodyLoader>
 #include <boost/optional.hpp>
 #include "exportdecl.h"
 
@@ -20,7 +20,7 @@ class CNOID_EXPORT EditableModelBase
 {
 public:
     EditableModelBase();
-    AbstractBodyLoader* loader;
+    VRMLNodePtr originalNode;
     Vector3 translation;
     Matrix3 rotation;
     virtual VRMLNodePtr toVRML() {};

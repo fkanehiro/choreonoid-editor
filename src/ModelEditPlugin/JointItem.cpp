@@ -19,6 +19,7 @@
 #include <cnoid/JointPath>
 #include <cnoid/BodyLoader>
 #include <cnoid/BodyState>
+#include <cnoid/VRMLBody>
 #include <cnoid/SceneBody>
 #include <cnoid/SceneShape>
 #include "ModelEditDragger.h"

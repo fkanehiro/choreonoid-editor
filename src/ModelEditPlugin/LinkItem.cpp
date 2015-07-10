@@ -21,6 +21,7 @@
 #include <cnoid/BodyState>
 #include <cnoid/SceneBody>
 #include <cnoid/VRML>
+#include <cnoid/VRMLBody>
 #include <cnoid/MeshGenerator>
 #include "ModelEditDragger.h"
 #include <cnoid/FileUtil>
@@ -39,8 +40,6 @@ using namespace boost;
 namespace {
 
 const bool TRACE_FUNCTIONS = false;
-
-BodyLoader bodyLoader;
 
 inline double radian(double deg) { return (3.14159265358979 * deg / 180.0); }
 
@@ -309,8 +308,8 @@ VRMLNodePtr LinkItemImpl::toVRML()
         trans->rotation = self->rotation;
     }
     node->children.push_back(trans);
-    if (self->loader) {
-        VRMLProtoInstancePtr original = dynamic_pointer_cast<VRMLProtoInstance>(self->loader->retriveOriginalNode(link));
+    if (self->originalNode) {
+        VRMLProtoInstancePtr original = dynamic_pointer_cast<VRMLProtoInstance>(self->originalNode);
         if (original) {
             trans->children = get<MFNode>(original->fields["children"]);
         }

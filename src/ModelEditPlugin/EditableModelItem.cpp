@@ -25,7 +25,8 @@
 #include <cnoid/SceneBody>
 #include "ModelEditDragger.h"
 #include <cnoid/VRML>
-#include <cnoid/VRMLWriter>
+#include <cnoid/VRMLBody>
+#include <cnoid/VRMLBodyWriter>
 #include <cnoid/FileUtil>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
@@ -83,8 +84,8 @@ public:
     bool loadModelFile(const std::string& filename);
     bool saveModelFile(const std::string& filename);
     VRMLNodePtr toVRML();
-    void setLinkTree(Link* link);
-    void setLinkTreeSub(Link* link, Link* parentLink, Item* parentItem);
+    void setLinkTree(Link* link, VRMLBodyLoader* vloader);
+    void setLinkTreeSub(Link* link, VRMLBodyLoader* vloader, Item* parentItem);
     void doAssign(Item* srcItem);
     void doPutProperties(PutPropertyFunction& putProperty);
     bool store(Archive& archive);
@@ -146,28 +147,30 @@ EditableModelItemImpl::~EditableModelItemImpl()
 }
 
 
-void EditableModelItemImpl::setLinkTree(Link* link)
+void EditableModelItemImpl::setLinkTree(Link* link, VRMLBodyLoader* vloader)
 {
-    setLinkTreeSub(link, NULL, self);
+    setLinkTreeSub(link, vloader, self);
     self->notifyUpdate();
 }
 
 
-void EditableModelItemImpl::setLinkTreeSub(Link* link, Link* parentLink, Item* parentItem)
+void EditableModelItemImpl::setLinkTreeSub(Link* link, VRMLBodyLoader* vloader, Item* parentItem)
 {
+    // first, create joint item
     JointItemPtr item = new JointItem(link);
-    item->loader = &bodyLoader;
+    item->originalNode = vloader->getOriginalNode(link);
     parentItem->addChildItem(item);
     ItemTreeView::instance()->checkItem(item, true);
+    // next, create link item under the joint item
     LinkItemPtr litem = new LinkItem(link);
-    litem->loader = &bodyLoader;
+    litem->originalNode = vloader->getOriginalNode(link);
     litem->setName("link");
     item->addChildItem(litem);
     ItemTreeView::instance()->checkItem(litem, true);
 
     if(link->child()){
         for(Link* child = link->child(); child; child = child->sibling()){
-            setLinkTreeSub(child, link, item);
+            setLinkTreeSub(child, vloader, item);
         }
     }
 }
@@ -194,7 +197,32 @@ bool EditableModelItemImpl::loadModelFile(const std::string& filename)
         newBody->initializeState();
         newBody->calcForwardKinematics();
         Link* link = newBody->rootLink();
-        setLinkTree(link);
+        
+        AbstractBodyLoaderPtr loader = bodyLoader.lastActualBodyLoader();
+        VRMLBodyLoader* vloader = dynamic_cast<VRMLBodyLoader*>(loader.get());
+        if (vloader) {
+            // VRMLBodyLoader supports retriveOriginalNode function
+            setLinkTree(link, vloader);
+        } else {
+            // Other loaders dont, so we wrap with inline node
+            VRMLProtoInstance* proto = new VRMLProtoInstance(new VRMLProto(""));
+            MFNode* children = new MFNode();
+            VRMLInlinePtr inl = new VRMLInline();
+            inl->urls.push_back(filename);
+            children->push_back(inl);
+            proto->fields["children"] = *children;
+            // first, create joint item
+            JointItemPtr item = new JointItem(link);
+            item->originalNode = proto;
+            self->addChildItem(item);
+            ItemTreeView::instance()->checkItem(item, true);
+            // next, create link item under the joint item
+            LinkItemPtr litem = new LinkItem(link);
+            litem->originalNode = proto;
+            litem->setName("link");
+            item->addChildItem(litem);
+            ItemTreeView::instance()->checkItem(litem, true);
+        }
     }
 
     return (newBody);
@@ -225,7 +253,7 @@ bool EditableModelItemImpl::saveModelFile(const std::string& filename)
 {
     std::ofstream of;
     of.open(filename.c_str(), std::ios::out);
-    VRMLWriter* writer = new VRMLWriter(of);
+    VRMLBodyWriter* writer = new VRMLBodyWriter(of);
     writer->setOutFileName(filename);
     writer->writeHeader();
 

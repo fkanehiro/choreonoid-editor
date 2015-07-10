@@ -21,6 +21,7 @@
 #include <cnoid/BodyState>
 #include <cnoid/SceneBody>
 #include <cnoid/VRML>
+#include <cnoid/VRMLBody>
 #include <cnoid/MeshGenerator>
 #include "ModelEditDragger.h"
 #include <cnoid/FileUtil>
