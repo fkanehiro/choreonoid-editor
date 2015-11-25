@@ -30,7 +30,8 @@ public:
     JointItem(Link* link);
     virtual ~JointItem();
 
-    virtual VRMLNodePtr toVRML();
+    VRMLNodePtr toVRML();
+    std::string toURDF();
     
     Link* link() const;
     

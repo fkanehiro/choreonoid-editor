@@ -30,6 +30,7 @@
 #include <bitset>
 #include <deque>
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 #include "gettext.h"
 
@@ -85,6 +86,7 @@ public:
     bool setBoxSize(const std::string& v);
     bool setPrimitiveColor(const std::string& v);
     VRMLNodePtr toVRML();
+    string toURDF();
     bool store(Archive& archive);
     bool restore(const Archive& archive);
 };
@@ -315,6 +317,48 @@ VRMLNodePtr LinkItemImpl::toVRML()
         }
     }
     return node;
+}
+
+
+string LinkItem::toURDF()
+{
+    return impl->toURDF();
+}
+
+string LinkItemImpl::toURDF()
+{
+    ostringstream ss;
+    JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
+    Affine3 relative;
+    if (parentjoint) {
+        Affine3 parent, child;
+        parent.translation() = parentjoint->translation;
+        parent.linear() = parentjoint->rotation;
+        child.translation() = self->translation;
+        child.linear() = self->rotation;
+        relative = parent.inverse() * child;
+        ss << "<link name=\"" << parentjoint->name() << "_LINK\">" << endl;
+        ss << " <inertial>" << endl;
+        ss << "  <mass value=\"" << mass << "\"/>" << endl;
+        ss << "  <origin xyz=\"" << centerOfMass[0] << " " << centerOfMass[1] << " " << centerOfMass[1] << "\" rpy=\"0 0 0\"/>" << endl;
+        ss << "  <inertia ixx=\"" << momentsOfInertia(0, 0)
+           << "\" ixy=\"" << momentsOfInertia(0, 1)
+           << "\" ixz=\"" << momentsOfInertia(0, 2)
+           << "\" iyy=\"" << momentsOfInertia(1, 1)
+           << "\" iyz=\"" << momentsOfInertia(1, 2)
+           << "\" izz=\"" << momentsOfInertia(2, 2) << "\" />" << endl;
+        ss << " </inertial>" << endl;
+        /*
+          if (self->originalNode) {
+          VRMLProtoInstancePtr original = dynamic_pointer_cast<VRMLProtoInstance>(self->originalNode);
+          if (original) {
+          trans->children = get<MFNode>(original->fields["children"]);
+          }
+          }
+        */
+        ss << "</link>" << endl;
+    }
+    return ss.str();
 }
 
 

@@ -33,7 +33,8 @@ public:
 
     bool loadModelFile(const std::string& filename);
     
-    virtual VRMLNodePtr toVRML(VRMLBodyLoader& loader);
+    VRMLNodePtr toVRML();
+    std::string toURDF();
     
     Link* link() const;
     

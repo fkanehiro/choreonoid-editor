@@ -29,6 +29,8 @@ public:
 
     bool loadModelFile(const std::string& filename);
     bool saveModelFile(const std::string& filename);
+    bool saveModelFileURDF(const std::string& filename);
+    bool saveModelFileSDF(const std::string& filename);
     
 protected:
     virtual ItemPtr doDuplicate() const;

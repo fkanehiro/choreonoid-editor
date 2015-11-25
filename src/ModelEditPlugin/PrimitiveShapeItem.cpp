@@ -30,6 +30,7 @@
 #include <bitset>
 #include <deque>
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 #include "gettext.h"
 
@@ -88,6 +89,7 @@ public:
     bool setBoxSize(const std::string& v);
     bool setPrimitiveColor(const std::string& v);
     VRMLNodePtr toVRML();
+    string toURDF();
     bool store(Archive& archive);
     bool restore(const Archive& archive);
 };
@@ -392,6 +394,59 @@ VRMLNodePtr PrimitiveShapeItemImpl::toVRML()
         shape->geometry = sphere;
     }
     return node;
+}
+
+
+string PrimitiveShapeItem::toURDF()
+{
+    return impl->toURDF();
+}
+
+string PrimitiveShapeItemImpl::toURDF()
+{
+    ostringstream ss;
+    ss << "<link name=\"" << self->name() << "\">" << endl;
+    ss << " <inertial>" << endl;
+    ss << "  <mass value=\"" << mass << "\"/>" << endl;
+    ss << "  <origin xyz=\"" << centerOfMass << "\" rpy=\"0 0 0\"/>" << endl;
+    ss << "  <inertia ixx=\"" << momentsOfInertia(0, 0)
+       << "\" ixy=" << momentsOfInertia(0, 1)
+       << "\" ixz=" << momentsOfInertia(0, 2)
+       << "\" iyy=" << momentsOfInertia(1, 1)
+       << "\" iyz=" << momentsOfInertia(1, 2)
+       << "\" izz=" << momentsOfInertia(2, 2) << "\" />" << endl;
+    ss << " </inertial>" << endl;
+    Affine3 relative;
+    JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
+    if (parentjoint) {
+        Affine3 parent, child;
+        parent.translation() = parentjoint->translation;
+        parent.linear() = parentjoint->rotation;
+        child.translation() = self->translation;
+        child.linear() = self->rotation;
+        relative = parent.inverse() * child;
+    } else {
+        relative.translation() = self->translation;
+        relative.linear() = self->rotation;
+    }
+    string pt(primitiveType.selectedSymbol());
+    if (pt == "Box") {
+        ss << " <geometry>" << endl;
+        ss << "  <box size=\"" << boxSize << "\" />" << endl;
+        ss << " </geometry>" << endl;
+    } else if (pt == "Cylinder") {
+        ss << " <geometry>" << endl;
+        ss << "  <cylinder radius=\"" << primitiveRadius
+           << " length=\"" << primitiveHeight << "\" />" << endl;
+        ss << " </geometry>" << endl;
+    } else if (pt == "Sphere") {
+        ss << " <geometry>" << endl;
+        ss << "  <sphere radius=\"" << primitiveRadius << "\" />" << endl;
+        ss << " </geometry>" << endl;
+    } else {
+        cout << "[URDF] unsupported primitive type " << pt << endl;
+    }
+    return ss.str();
 }
 
 

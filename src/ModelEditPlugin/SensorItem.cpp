@@ -77,7 +77,8 @@ public:
     void onPositionChanged();
     double radius() const;
     void setRadius(double val);
-    VRMLNodePtr toVRML(VRMLBodyLoader& loader);
+    VRMLNodePtr toVRML();
+    string toURDF();
     void doAssign(Item* srcItem);
     void doPutProperties(PutPropertyFunction& putProperty);
     bool store(Archive& archive);
@@ -344,13 +345,25 @@ void SensorItemImpl::doPutProperties(PutPropertyFunction& putProperty)
 }
 
 
-VRMLNodePtr SensorItem::toVRML(VRMLBodyLoader& loader)
+VRMLNodePtr SensorItem::toVRML()
 {
-    return impl->toVRML(loader);
+    return impl->toVRML();
 }
 
 
-VRMLNodePtr SensorItemImpl::toVRML(VRMLBodyLoader& loader)
+VRMLNodePtr SensorItemImpl::toVRML()
+{
+    return NULL;
+}
+
+
+string SensorItem::toURDF()
+{
+    return impl->toURDF();
+}
+
+
+string SensorItemImpl::toURDF()
 {
     return NULL;
 }
