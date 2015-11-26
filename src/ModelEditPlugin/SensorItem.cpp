@@ -20,7 +20,9 @@
 #include <cnoid/BodyState>
 #include <cnoid/SceneBody>
 #include <cnoid/SceneShape>
+#include <cnoid/Sensor>
 #include <cnoid/Camera>
+#include <cnoid/VRMLBody>
 #include "ModelEditDragger.h"
 #include <cnoid/FileUtil>
 #include <cnoid/MeshGenerator>
@@ -353,7 +355,47 @@ VRMLNodePtr SensorItem::toVRML()
 
 VRMLNodePtr SensorItemImpl::toVRML()
 {
-    return NULL;
+    VRMLNodePtr node = NULL;
+    ForceSensor* fsensor = dynamic_cast<ForceSensor*>(device);
+    if (fsensor) {
+        VRMLForceSensorPtr fnode = new VRMLForceSensor();
+        fnode->maxForce = fsensor->F_max().head<3>();
+        fnode->maxTorque = fsensor->F_max().tail<3>();
+        node = fnode;
+    }
+    Camera* camera = dynamic_cast<Camera*>(device);
+    if (camera) {
+        VRMLVisionSensorPtr cnode = new VRMLVisionSensor();
+        RangeCamera* range = dynamic_cast<RangeCamera*>(device);
+        if (range) {
+            if (range->isOrganized()) {
+                if (range->imageType() == Camera::NO_IMAGE) {
+                    cnode->type = "DEPTH";
+                } else {
+                    cnode->type = "COLOR_DEPTH";
+                }
+            } else {
+                if (range->imageType() == Camera::NO_IMAGE) {
+                    cnode->type = "POINT_CLOUD";
+                } else {
+                    cnode->type = "COLOR_POINT_CLOUD";
+                }
+            }
+        } else {
+            if (camera->imageType() == Camera::COLOR_IMAGE) {
+                cnode->type = "COLOR";
+            } else {
+                cnode->type = "MONO";
+            }
+        }
+        cnode->width = camera->resolutionX();
+        cnode->height = camera->resolutionY();
+        cnode->fieldOfView = camera->fieldOfView();
+        cnode->frontClipDistance = camera->nearDistance();
+        cnode->backClipDistance = camera->farDistance();
+        node = cnode;
+    }
+    return node;
 }
 
 
