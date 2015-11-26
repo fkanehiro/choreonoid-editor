@@ -52,7 +52,7 @@ class SensorItemImpl
 {
 public:
     SensorItem* self;
-    Link* link;
+    Device* device;
     Selection sensorType;
     Selection cameraType;
     bool isselected;
@@ -65,7 +65,7 @@ public:
     ModelEditDraggerPtr positionDragger;
 
     SensorItemImpl(SensorItem* self);
-    SensorItemImpl(SensorItem* self, Link* link);
+    SensorItemImpl(SensorItem* self, Device* dev);
     SensorItemImpl(SensorItem* self, const SensorItemImpl& org);
     ~SensorItemImpl();
     
@@ -109,25 +109,25 @@ SensorItem::SensorItem()
 SensorItemImpl::SensorItemImpl(SensorItem* self)
     : self(self)
 {
-    link = new Link();
+    device = new Camera();
     init();
 }
 
 
-SensorItem::SensorItem(Link *link)
+SensorItem::SensorItem(Device *dev)
 {
-    impl = new SensorItemImpl(this, link);
+    impl = new SensorItemImpl(this, dev);
 }
 
 
-SensorItemImpl::SensorItemImpl(SensorItem* self, Link* link)
+SensorItemImpl::SensorItemImpl(SensorItem* self, Device* dev)
     : self(self)
 {
-    this->link = link;
+    this->device = dev;
     init();
-    sceneLink->setPosition(link->position());
+    sceneLink->setPosition(dev->link()->position());
     sceneLink->notifyUpdate();
-    self->setName(link->name());
+    self->setName(dev->name());
 }
 
 
@@ -140,7 +140,7 @@ SensorItem::SensorItem(const SensorItem& org)
 
 SensorItemImpl::SensorItemImpl(SensorItem* self, const SensorItemImpl& org)
     : self(self),
-      link(org.link)
+      device(org.device)
 {
     init();
 }
@@ -254,8 +254,8 @@ void SensorItemImpl::onDraggerStarted()
 
 void SensorItemImpl::onDraggerDragged()
 {
-    link->position() = positionDragger->draggedPosition();
-    sceneLink->setPosition(link->position());
+    device->link()->position() = positionDragger->draggedPosition();
+    sceneLink->setPosition(device->link()->position());
     sceneLink->notifyUpdate();
     self->notifyUpdate();
  }
@@ -271,9 +271,9 @@ SensorItemImpl::~SensorItemImpl()
 }
 
 
-Link* SensorItem::link() const
+Device* SensorItem::device() const
 {
-    return impl->link;
+    return impl->device;
 }
 
 
@@ -299,9 +299,9 @@ void SensorItemImpl::doAssign(Item* srcItem)
 {
     SensorItem* srcSensorItem = dynamic_cast<SensorItem*>(srcItem);
     if(srcSensorItem){
-        Link* srcLink = srcSensorItem->link();
-        link->p() = srcLink->p();
-        link->R() = srcLink->R();
+        Link* srcLink = srcSensorItem->device()->link();
+        device->link()->p() = srcLink->p();
+        device->link()->R() = srcLink->R();
     }
 }
 

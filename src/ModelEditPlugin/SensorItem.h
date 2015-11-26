@@ -28,15 +28,13 @@ public:
         
     SensorItem();
     SensorItem(const SensorItem& org);
-    SensorItem(Link* link);
+    SensorItem(Device* dev);
     virtual ~SensorItem();
 
-    bool loadModelFile(const std::string& filename);
-    
     VRMLNodePtr toVRML();
     std::string toURDF();
     
-    Link* link() const;
+    Device* device() const;
     
     virtual SgNode* getScene();
 

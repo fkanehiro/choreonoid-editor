@@ -6,6 +6,7 @@
 #include "EditableModelBase.h"
 #include "JointItem.h"
 #include "LinkItem.h"
+#include "SensorItem.h"
 #include <cnoid/YAMLReader>
 #include <cnoid/EigenArchive>
 #include <cnoid/Archive>
@@ -247,6 +248,15 @@ bool EditableModelItemImpl::loadModelFile(const std::string& filename)
             litem->setName("link");
             item->addChildItem(litem);
             ItemTreeView::instance()->checkItem(litem, true);
+        }
+        for (int i = 0; i < newBody->numDevices(); i++) {
+            Device* dev = newBody->device(i);
+            SensorItemPtr sitem = new SensorItem(dev);
+            Item* parent = self->findItem<Item>(dev->link()->name());
+            if (parent) {
+                parent->addChildItem(sitem);
+                ItemTreeView::instance()->checkItem(sitem, true);
+            }
         }
     }
 
