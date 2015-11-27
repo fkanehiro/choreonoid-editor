@@ -12,6 +12,7 @@
 #include <cnoid/VRML>
 #include <cnoid/VRMLBodyLoader>
 #include <boost/optional.hpp>
+#include <string>
 #include "exportdecl.h"
 
 namespace cnoid {
@@ -24,6 +25,7 @@ public:
     Vector3 translation;
     Matrix3 rotation;
     virtual VRMLNodePtr toVRML() {};
+    virtual std::string toURDF() {};
     bool onTranslationChanged(const std::string& value);
     bool onRotationChanged(const std::string& value);
     bool onRotationAxisChanged(const std::string& value);

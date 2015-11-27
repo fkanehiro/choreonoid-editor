@@ -33,6 +33,7 @@ public:
 
     Link* link() const;
     VRMLNodePtr toVRML();
+    std::string toURDF();
 
     virtual SgNode* getScene();
 

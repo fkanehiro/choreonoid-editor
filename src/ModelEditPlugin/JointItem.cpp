@@ -30,6 +30,7 @@
 #include <bitset>
 #include <deque>
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 #include "gettext.h"
 
@@ -84,6 +85,7 @@ public:
     double radius() const;
     void setRadius(double val);
     VRMLNodePtr toVRML();
+    string toURDF();
     void doAssign(Item* srcItem);
     void doPutProperties(PutPropertyFunction& putProperty);
     bool setJointAxis(const std::string& value);
@@ -409,6 +411,62 @@ VRMLNodePtr JointItemImpl::toVRML()
         }
     }
     return node;
+}
+
+string JointItem::toURDF()
+{
+    return impl->toURDF();
+}
+
+string JointItemImpl::toURDF()
+{
+    ostringstream ss;
+    string jtype;
+    jtype = "fixed";
+    if (jointType.selectedSymbol() == "rotate") {
+        // TODO: use continuous when no limits are set
+        jtype = "revolute";
+    } else if (jointType.selectedSymbol() == "slide") {
+        jtype = "prismatic";
+    }
+    ss << "<joint name=\"" << self->name() << "\" type=\"" << jtype << "\">" << endl;
+    ss << " <axis>" << jointAxis[0] << " " << jointAxis[1] << " " << jointAxis[2] << "</axis>" << endl;
+    if (jtype == "revolute" || jtype == "prismatic") {
+        ss << " <limit>" << endl;
+        ss << "  <lower>" << llimit << "</lower>"<< endl;
+        ss << "  <upper>" << ulimit << "</upper>"<< endl;
+        ss << " </limit>" << endl;
+    }
+    JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
+    bool needworld = false;
+    if (parentjoint) {
+        Affine3 parent, child, relative;
+        ss << " <parent link=\"" << parentjoint->name() << "_LINK\"/>" << endl;
+        parent.translation() = parentjoint->translation;
+        parent.linear() = parentjoint->rotation;
+        child.translation() = self->translation;
+        child.linear() = self->rotation;
+        relative = parent.inverse() * child;
+        Vector3 trans = relative.translation();
+        Vector3 rpy = rpyFromRot(relative.rotation());
+        ss << " <origin xyz=\"" << trans[0] << " " << trans[1] << " " << trans[2]
+           << "\" rpy=\"" << rpy[0] << " " << rpy[1] << " " << rpy[2] << "\"/>" << endl;
+    } else {
+        ss << " <parent link=\"world\"/>" << endl;
+        needworld = true;
+    }
+    ss << " <child link=\"" << self->name() << "_LINK\"/>" << endl;
+    ss << "</joint>" << endl;
+    if (needworld) {
+        ss << "<link name=\"world\" />" << endl;
+    }
+    for(Item* child = self->childItem(); child; child = child->nextItem()){
+        EditableModelBase* item = dynamic_cast<EditableModelBase*>(child);
+        if (item) {
+            ss << item->toURDF();
+        }
+    }
+    return ss.str();
 }
 
 bool JointItem::store(Archive& archive)

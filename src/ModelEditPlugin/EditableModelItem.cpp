@@ -6,6 +6,7 @@
 #include "EditableModelBase.h"
 #include "JointItem.h"
 #include "LinkItem.h"
+#include "SensorItem.h"
 #include <cnoid/YAMLReader>
 #include <cnoid/EigenArchive>
 #include <cnoid/Archive>
@@ -28,6 +29,8 @@
 #include <cnoid/VRMLBody>
 #include <cnoid/VRMLBodyWriter>
 #include <cnoid/FileUtil>
+#include <sdf/sdf.hh>
+#include <sdf/parser_urdf.hh>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/filesystem.hpp>
@@ -67,6 +70,22 @@ bool saveEditableModelItem(EditableModelItem* item, const std::string& filename)
     return false;
 }
     
+bool saveEditableModelItemURDF(EditableModelItem* item, const std::string& filename)
+{
+    if(item->saveModelFileURDF(filename)){
+        return true;
+    }
+    return false;
+}
+
+bool saveEditableModelItemSDF(EditableModelItem* item, const std::string& filename)
+{
+    if(item->saveModelFileSDF(filename)){
+        return true;
+    }
+    return false;
+}
+
 }
 
 
@@ -80,10 +99,13 @@ public:
     EditableModelItemImpl(EditableModelItem* self);
     EditableModelItemImpl(EditableModelItem* self, const EditableModelItemImpl& org);
     ~EditableModelItemImpl();
-        
+    
     bool loadModelFile(const std::string& filename);
     bool saveModelFile(const std::string& filename);
+    bool saveModelFileURDF(const std::string& filename);
+    bool saveModelFileSDF(const std::string& filename);
     VRMLNodePtr toVRML();
+    string toURDF();
     void setLinkTree(Link* link, VRMLBodyLoader* vloader);
     void setLinkTreeSub(Link* link, VRMLBodyLoader* vloader, Item* parentItem);
     void doAssign(Item* srcItem);
@@ -105,7 +127,11 @@ void EditableModelItem::initializeClass(ExtensionManager* ext)
         ext->itemManager().addLoader<EditableModelItem>(
             _("OpenHRP Model File for Editing"), "OpenHRP-VRML-MODEL", "wrl;dae;stl", boost::bind(loadEditableModelItem, _1, _2));
         ext->itemManager().addSaver<EditableModelItem>(
-            _("OpenHRP Model File for Editing"), "OpenHRP-VRML-MODEL", "wrl", boost::bind(saveEditableModelItem, _1, _2));
+            _("OpenHRP Model File"), "OpenHRP-VRML-MODEL", "wrl", boost::bind(saveEditableModelItem, _1, _2));
+        ext->itemManager().addSaver<EditableModelItem>(
+            _("URDF Model File"), "URDF-MODEL", "urdf", boost::bind(saveEditableModelItemURDF, _1, _2));
+        ext->itemManager().addSaver<EditableModelItem>(
+            _("SDF Model File"), "SDF-MODEL", "sdf", boost::bind(saveEditableModelItemSDF, _1, _2));
         initialized = true;
     }
 }
@@ -223,10 +249,20 @@ bool EditableModelItemImpl::loadModelFile(const std::string& filename)
             item->addChildItem(litem);
             ItemTreeView::instance()->checkItem(litem, true);
         }
+        for (int i = 0; i < newBody->numDevices(); i++) {
+            Device* dev = newBody->device(i);
+            SensorItemPtr sitem = new SensorItem(dev);
+            Item* parent = self->findItem<Item>(dev->link()->name());
+            if (parent) {
+                parent->addChildItem(sitem);
+                ItemTreeView::instance()->checkItem(sitem, true);
+            }
+        }
     }
 
     return (newBody);
 }
+
 
 VRMLNodePtr EditableModelItemImpl::toVRML()
 {
@@ -240,6 +276,21 @@ VRMLNodePtr EditableModelItemImpl::toVRML()
         }
     }
     return node;
+}
+
+
+string EditableModelItemImpl::toURDF()
+{
+    ostringstream ss;
+    ss << "<robot name=\"" << self->name() << "\">" << endl;
+    for(Item* child = self->childItem(); child; child = child->nextItem()){
+        EditableModelBase* item = dynamic_cast<EditableModelBase*>(child);
+        if (item) {
+            ss << item->toURDF();
+        }
+    }
+    ss << "</robot>" << endl;
+    return ss.str();
 }
 
 
@@ -363,6 +414,40 @@ bool EditableModelItemImpl::saveModelFile(const std::string& filename)
     of << endl;
 
     writer->writeNode(toVRML());
+}
+
+
+bool EditableModelItem::saveModelFileURDF(const std::string& filename)
+{
+    return impl->saveModelFileURDF(filename);
+}
+
+
+bool EditableModelItemImpl::saveModelFileURDF(const std::string& filename)
+{
+    std::ofstream of;
+    of.open(filename.c_str(), std::ios::out);
+    of << toURDF();
+    of.close();
+}
+
+
+bool EditableModelItem::saveModelFileSDF(const std::string& filename)
+{
+    return impl->saveModelFileSDF(filename);
+}
+
+
+bool EditableModelItemImpl::saveModelFileSDF(const std::string& filename)
+{
+    sdf::SDFPtr robot(new sdf::SDF());
+    sdf::init(robot);
+    sdf::readString(toURDF(), robot);
+    std::ofstream of;
+    of.open(filename.c_str(), std::ios::out);
+    of << robot->ToString();
+    cout << robot->ToString() << endl;
+    of.close();
 }
 
 

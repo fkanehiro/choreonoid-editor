@@ -204,6 +204,27 @@ endif()
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS EIGEN_NO_DEBUG)
 #set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS EIGEN_NO_DEBUG EIGEN_DONT_ALIGN)
 
+# sdformat
+set(SDFORMAT_DIR ${SDFORMAT_DIR} CACHE PATH "set the top directory of the SDFORMAT ")
+if(UNIX)
+  if(NOT SDFORMAT_DIR)
+    pkg_check_modules(SDFORMAT REQUIRED sdformat)
+  endif()
+elseif(MSVC)
+  if(NOT SDFORMAT_DIR)
+    message(FATAL_ERROR "Please specify the directory of the SDFORMAT to SDFORMAT_DIR.")
+  endif()
+endif()
+
+if(NOT SDFORMAT_FOUND)
+  set(SDFORMAT_LIBRARIES sdformat)
+  set(SDFORMAT_INCLUDE_DIRS ${SDFORMAT_DIR}/include)
+  set(SDFORMAT_LIBRARY_DIRS ${SDFORMAT_DIR}/lib)
+endif()
+
+include_directories(${SDFORMAT_INCLUDE_DIRS})
+link_directories(${SDFORMAT_LIBRARY_DIRS})
+
 # doxygen
 # find_package(Doxygen)
 
