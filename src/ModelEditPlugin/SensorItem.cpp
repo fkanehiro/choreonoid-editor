@@ -57,6 +57,13 @@ public:
     Device* device;
     Selection sensorType;
     Selection cameraType;
+    int resolutionX;
+    int resolutionY;
+    double nearDistance;
+    double farDistance;
+    double fieldOfView;
+    Vector3 maxForce;
+    Vector3 maxTorque;
     bool isselected;
 
     SceneLinkPtr sceneLink;
@@ -72,6 +79,7 @@ public:
     ~SensorItemImpl();
     
     void init();
+    void syncDevice();
     void onSelectionChanged();
     void attachPositionDragger();
     void onDraggerStarted();
@@ -79,6 +87,8 @@ public:
     void onPositionChanged();
     double radius() const;
     void setRadius(double val);
+    bool onMaxForceChanged(const std::string& value);
+    bool onMaxTorqueChanged(const std::string& value);
     VRMLNodePtr toVRML();
     string toURDF();
     void doAssign(Item* srcItem);
@@ -127,6 +137,7 @@ SensorItemImpl::SensorItemImpl(SensorItem* self, Device* dev)
 {
     this->device = dev;
     init();
+    syncDevice();
     sceneLink->setPosition(dev->link()->position());
     sceneLink->notifyUpdate();
     self->setName(dev->name());
@@ -145,6 +156,7 @@ SensorItemImpl::SensorItemImpl(SensorItem* self, const SensorItemImpl& org)
       device(org.device)
 {
     init();
+    syncDevice();
 }
 
 
@@ -152,13 +164,20 @@ void SensorItemImpl::init()
 {
     sensorType.resize(2);
     sensorType.setSymbol(0, "camera");
-    sensorType.setSymbol(1, "force");
+    sensorType.setSymbol(1, "range");
+    sensorType.setSymbol(2, "force");
+    sensorType.setSymbol(3, "acceleration");
+    sensorType.setSymbol(4, "gyro");
     sensorType.select("camera");
 
     cameraType.resize(3);
-    cameraType.setSymbol(Camera::NO_IMAGE, "no");
-    cameraType.setSymbol(Camera::COLOR_IMAGE, "color");
-    cameraType.setSymbol(Camera::GRAYSCALE_IMAGE, "grayscale");
+    cameraType.setSymbol(0, "NONE");
+    cameraType.setSymbol(1, "COLOR");
+    cameraType.setSymbol(2, "DEPTH");
+    cameraType.setSymbol(3, "COLOR_DEPTH");
+    cameraType.setSymbol(4, "POINT_CLOUD");
+    cameraType.setSymbol(5, "COLOR_POINT_CLOUD");
+    cameraType.select("COLOR");
 
     sceneLink = new SceneLink(new Link());
 
@@ -205,6 +224,47 @@ void SensorItemImpl::init()
     self->sigPositionChanged().connect(boost::bind(&SensorItemImpl::onPositionChanged, this));
     ItemTreeView::mainInstance()->sigSelectionChanged().connect(boost::bind(&SensorItemImpl::onSelectionChanged, this));
     isselected = false;
+}
+
+void SensorItemImpl::syncDevice()
+{
+    ForceSensor* fsensor = dynamic_cast<ForceSensor*>(device);
+    if (fsensor) {
+        sensorType.select("force");
+        maxForce = fsensor->F_max().head<3>();
+        maxTorque = fsensor->F_max().tail<3>();
+    }
+    Camera* camera = dynamic_cast<Camera*>(device);
+    if (camera) {
+        sensorType.select("camera");
+        RangeCamera* range = dynamic_cast<RangeCamera*>(device);
+        if (range) {
+            if (range->isOrganized()) {
+                if (range->imageType() == Camera::NO_IMAGE) {
+                    cameraType.select("DEPTH");
+                } else {
+                    cameraType.select("COLOR_DEPTH");
+                }
+            } else {
+                if (range->imageType() == Camera::NO_IMAGE) {
+                    cameraType.select("POINT_CLOUD");
+                } else {
+                    cameraType.select("COLOR_POINT_CLOUD");
+                }
+            }
+        } else {
+            if (camera->imageType() == Camera::COLOR_IMAGE) {
+                cameraType.select("COLOR");
+            } else {
+                cameraType.select("NONE");
+            }
+        }
+        resolutionX = camera->resolutionX();
+        resolutionY = camera->resolutionY();
+        fieldOfView = camera->fieldOfView();
+        nearDistance = camera->nearDistance();
+        farDistance = camera->farDistance();
+    }
 }
 
 
@@ -343,9 +403,35 @@ void SensorItemImpl::doPutProperties(PutPropertyFunction& putProperty)
     if (st == "camera") {
         putProperty(_("Camera type"), cameraType,
                     boost::bind(&Selection::selectIndex, &cameraType, _1));
+        putProperty.decimals(4).min(0)(_("Resolution X"), resolutionX, changeProperty(resolutionX));
+        putProperty.decimals(4).min(0)(_("Resolution Y"), resolutionY, changeProperty(resolutionY));
+        putProperty.decimals(4)(_("Near distance"), nearDistance, changeProperty(nearDistance));
+        putProperty.decimals(4)(_("Far distance"), farDistance, changeProperty(farDistance));
+    } else if (st == "force") {
+        putProperty("Max force", str(maxForce), boost::bind(&SensorItemImpl::onMaxForceChanged, this, _1));
+        putProperty("Max torque", str(maxTorque), boost::bind(&SensorItemImpl::onMaxTorqueChanged, this, _1));
     }
 }
 
+bool SensorItemImpl::onMaxForceChanged(const std::string& value)
+{
+    Vector3 p;
+    if(toVector3(value, p)){
+        maxForce = p;
+        return true;
+    }
+    return false;
+}
+
+bool SensorItemImpl::onMaxTorqueChanged(const std::string& value)
+{
+    Vector3 p;
+    if(toVector3(value, p)){
+        maxTorque = p;
+        return true;
+    }
+    return false;
+}
 
 VRMLNodePtr SensorItem::toVRML()
 {
@@ -356,43 +442,21 @@ VRMLNodePtr SensorItem::toVRML()
 VRMLNodePtr SensorItemImpl::toVRML()
 {
     VRMLNodePtr node = NULL;
-    ForceSensor* fsensor = dynamic_cast<ForceSensor*>(device);
-    if (fsensor) {
+    string st(sensorType.selectedSymbol());
+    if (st == "force") {
         VRMLForceSensorPtr fnode = new VRMLForceSensor();
-        fnode->maxForce = fsensor->F_max().head<3>();
-        fnode->maxTorque = fsensor->F_max().tail<3>();
+        fnode->maxForce = maxForce;
+        fnode->maxTorque = maxTorque;
         node = fnode;
     }
-    Camera* camera = dynamic_cast<Camera*>(device);
-    if (camera) {
+    if (st == "camera") {
         VRMLVisionSensorPtr cnode = new VRMLVisionSensor();
-        RangeCamera* range = dynamic_cast<RangeCamera*>(device);
-        if (range) {
-            if (range->isOrganized()) {
-                if (range->imageType() == Camera::NO_IMAGE) {
-                    cnode->type = "DEPTH";
-                } else {
-                    cnode->type = "COLOR_DEPTH";
-                }
-            } else {
-                if (range->imageType() == Camera::NO_IMAGE) {
-                    cnode->type = "POINT_CLOUD";
-                } else {
-                    cnode->type = "COLOR_POINT_CLOUD";
-                }
-            }
-        } else {
-            if (camera->imageType() == Camera::COLOR_IMAGE) {
-                cnode->type = "COLOR";
-            } else {
-                cnode->type = "MONO";
-            }
-        }
-        cnode->width = camera->resolutionX();
-        cnode->height = camera->resolutionY();
-        cnode->fieldOfView = camera->fieldOfView();
-        cnode->frontClipDistance = camera->nearDistance();
-        cnode->backClipDistance = camera->farDistance();
+        cnode->type = cameraType.selectedSymbol();
+        cnode->width = resolutionX;
+        cnode->height = resolutionY;
+        cnode->fieldOfView = fieldOfView;
+        cnode->frontClipDistance = nearDistance;
+        cnode->backClipDistance = farDistance;
         node = cnode;
     }
     return node;

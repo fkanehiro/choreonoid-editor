@@ -487,15 +487,15 @@ void PrimitiveShapeItemImpl::doPutProperties(PutPropertyFunction& putProperty)
                     boost::bind(&PrimitiveShapeItemImpl::setBoxSize, this, _1));
     }
     if (pt == "Cone") {
-        putProperty.decimals(4)(_("Cone radius"), primitiveRadius);
-        putProperty.decimals(4)(_("Cone height"), primitiveHeight);
+        putProperty.decimals(4)(_("Cone radius"), primitiveRadius, changeProperty(primitiveRadius));
+        putProperty.decimals(4)(_("Cone height"), primitiveHeight, changeProperty(primitiveHeight));
     }
     if (pt == "Cylinder") {
-        putProperty.decimals(4)(_("Cylinder radius"), primitiveRadius);
-        putProperty.decimals(4)(_("Cylinder height"), primitiveHeight);
+        putProperty.decimals(4)(_("Cylinder radius"), primitiveRadius, changeProperty(primitiveRadius));
+        putProperty.decimals(4)(_("Cylinder height"), primitiveHeight, changeProperty(primitiveHeight));
     }
     if (pt == "Sphere") {
-        putProperty.decimals(4)(_("Sphere radius"), primitiveRadius);
+        putProperty.decimals(4)(_("Sphere radius"), primitiveRadius, changeProperty(primitiveRadius));
     }
     oss.str("");
     oss << primitiveColor;
