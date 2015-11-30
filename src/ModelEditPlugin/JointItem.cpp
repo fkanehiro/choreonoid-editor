@@ -353,8 +353,8 @@ void JointItemImpl::doPutProperties(PutPropertyFunction& putProperty)
     if (jt == "rotate" || jt == "slide") {
         putProperty(_("Joint axis"), str(jointAxis),
                     boost::bind(&JointItemImpl::setJointAxis, this, _1));
-        putProperty.decimals(4)(_("Upper limit"), ulimit);
-        putProperty.decimals(4)(_("Lower limit"), llimit);
+        putProperty.decimals(4)(_("Upper limit"), ulimit, changeProperty(ulimit));
+        putProperty.decimals(4)(_("Lower limit"), llimit, changeProperty(llimit));
     }
     putProperty.decimals(4).min(0.0)(_("Axis size"), radius(),
                                      boost::bind(&JointItemImpl::setRadius, this, _1), true);
