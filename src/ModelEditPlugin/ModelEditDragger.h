@@ -5,7 +5,8 @@
 #ifndef CNOID_MODELEDIT_DRAGGER_H
 #define CNOID_MODELEDIT_DRAGGER_H
 
-#include <cnoid/SceneDragger>
+#include <cnoid/PositionDragger>
+#include <cnoid/SceneDrawables>
 #include "exportdecl.h"
 
 namespace cnoid {

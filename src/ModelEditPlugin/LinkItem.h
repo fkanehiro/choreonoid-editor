@@ -39,7 +39,7 @@ public:
     virtual SgNode* getScene();
 
 protected:
-    virtual ItemPtr doDuplicate() const;
+    virtual Item* doDuplicate() const;
     virtual void doAssign(Item* item);
     virtual void doPutProperties(PutPropertyFunction& putProperty);
     virtual bool store(Archive& archive);

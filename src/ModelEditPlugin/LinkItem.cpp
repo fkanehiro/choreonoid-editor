@@ -151,7 +151,7 @@ LinkItemImpl::LinkItemImpl(LinkItem* self, const LinkItemImpl& org)
 }
 
 
-ItemPtr LinkItem::doDuplicate() const
+Item* LinkItem::doDuplicate() const
 {
     return new LinkItem(*this);
 }

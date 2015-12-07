@@ -304,7 +304,7 @@ Link* JointItem::link() const
 }
 
 
-ItemPtr JointItem::doDuplicate() const
+Item* JointItem::doDuplicate() const
 {
     return new JointItem(*this);
 }
