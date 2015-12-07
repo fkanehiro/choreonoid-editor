@@ -26,6 +26,7 @@
 #include "ModelEditDragger.h"
 #include <cnoid/FileUtil>
 #include <cnoid/MeshGenerator>
+#include <cnoid/RangeCamera>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <bitset>
@@ -344,7 +345,7 @@ void SensorItemImpl::onPositionChanged()
 }
 
 
-ItemPtr SensorItem::doDuplicate() const
+Item* SensorItem::doDuplicate() const
 {
     return new SensorItem(*this);
 }

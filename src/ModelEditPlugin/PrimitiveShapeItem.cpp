@@ -153,7 +153,7 @@ PrimitiveShapeItemImpl::PrimitiveShapeItemImpl(PrimitiveShapeItem* self, const P
 }
 
 
-ItemPtr PrimitiveShapeItem::doDuplicate() const
+Item* PrimitiveShapeItem::doDuplicate() const
 {
     return new PrimitiveShapeItem(*this);
 }

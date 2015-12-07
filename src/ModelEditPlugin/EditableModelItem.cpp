@@ -451,7 +451,7 @@ bool EditableModelItemImpl::saveModelFileSDF(const std::string& filename)
 }
 
 
-ItemPtr EditableModelItem::doDuplicate() const
+Item* EditableModelItem::doDuplicate() const
 {
     return new EditableModelItem(*this);
 }
