@@ -30,3 +30,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_cnoid_plugin(${target} SHARED ${sources} ${headers} ${mofiles} )
 target_link_libraries(${target} CnoidUtil CnoidBase CnoidBody ${SDFORMAT_LIBRARIES} )
 apply_common_setting_for_plugin(${target} "${headers}")
+
+install(TARGETS
+  ${target}
+  RUNTIME DESTINATION ${CNOID_PLUGIN_SUBDIR}
+  LIBRARY DESTINATION ${CNOID_PLUGIN_SUBDIR}
+  ARCHIVE DESTINATION ${CNOID_PLUGIN_SUBDIR}
+)
