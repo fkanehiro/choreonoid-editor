@@ -192,6 +192,13 @@ void EditableModelItemImpl::setLinkTreeSub(Link* link, VRMLBodyLoader* vloader, 
     litem->originalNode = vloader->getOriginalNode(link);
     litem->setName("link");
     item->addChildItem(litem);
+    SgNode* collisionShape = link->collisionShape();
+    if (collisionShape != link->visualShape()) {
+        LinkItemPtr citem = new LinkItem(link);
+        citem->originalNode = vloader->getOriginalNode(link);
+        citem->setName("collision");
+        litem->addChildItem(citem);
+    }
     ItemTreeView::instance()->checkItem(litem, true);
 
     if(link->child()){

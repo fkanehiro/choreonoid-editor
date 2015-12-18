@@ -430,21 +430,33 @@ string PrimitiveShapeItemImpl::toURDF()
         relative.linear() = self->rotation;
     }
     string pt(primitiveType.selectedSymbol());
-    if (pt == "Box") {
-        ss << " <geometry>" << endl;
-        ss << "  <box size=\"" << boxSize << "\" />" << endl;
-        ss << " </geometry>" << endl;
-    } else if (pt == "Cylinder") {
-        ss << " <geometry>" << endl;
-        ss << "  <cylinder radius=\"" << primitiveRadius
-           << " length=\"" << primitiveHeight << "\" />" << endl;
-        ss << " </geometry>" << endl;
-    } else if (pt == "Sphere") {
-        ss << " <geometry>" << endl;
-        ss << "  <sphere radius=\"" << primitiveRadius << "\" />" << endl;
-        ss << " </geometry>" << endl;
-    } else {
-        cout << "[URDF] unsupported primitive type " << pt << endl;
+    for (int i=0; i < 2; i++) {
+        if (i == 0) {
+            ss << " <visual>" << endl;
+        } else {
+            ss << " <collision>" << endl;
+        }
+        if (pt == "Box") {
+            ss << "  <geometry>" << endl;
+            ss << "   <box size=\"" << boxSize << "\" />" << endl;
+            ss << "  </geometry>" << endl;
+        } else if (pt == "Cylinder") {
+            ss << "  <geometry>" << endl;
+            ss << "   <cylinder radius=\"" << primitiveRadius
+               << " length=\"" << primitiveHeight << "\" />" << endl;
+            ss << "  </geometry>" << endl;
+        } else if (pt == "Sphere") {
+            ss << "  <geometry>" << endl;
+            ss << "   <sphere radius=\"" << primitiveRadius << "\" />" << endl;
+            ss << "  </geometry>" << endl;
+        } else {
+            cout << "[URDF] unsupported primitive type " << pt << endl;
+        }
+        if (i == 0) {
+            ss << " </visual>" << endl;
+        } else {
+            ss << " </collision>" << endl;
+        }
     }
     return ss.str();
 }
