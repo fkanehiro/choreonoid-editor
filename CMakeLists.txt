@@ -225,6 +225,27 @@ endif()
 include_directories(${SDFORMAT_INCLUDE_DIRS})
 link_directories(${SDFORMAT_LIBRARY_DIRS})
 
+# assimp
+set(ASSIMP_DIR ${ASSIMP_DIR} CACHE PATH "set the top directory of the ASSIMP ")
+if(UNIX)
+  if(NOT ASSIMP_DIR)
+    pkg_check_modules(ASSIMP REQUIRED assimp)
+  endif()
+elseif(MSVC)
+  if(NOT ASSIMP_DIR)
+    message(FATAL_ERROR "Please specify the directory of the ASSIMP to ASSIMP_DIR.")
+  endif()
+endif()
+
+if(NOT ASSIMP_FOUND)
+  set(ASSIMP_LIBRARIES assimp)
+  set(ASSIMP_INCLUDE_DIRS ${ASSIMP_DIR}/include)
+  set(ASSIMP_LIBRARY_DIRS ${ASSIMP_DIR}/lib)
+endif()
+
+include_directories(${ASSIMP_INCLUDE_DIRS})
+link_directories(${ASSIMP_LIBRARY_DIRS})
+
 # doxygen
 # find_package(Doxygen)
 

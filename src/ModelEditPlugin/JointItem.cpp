@@ -168,7 +168,9 @@ void JointItemImpl::init()
     self->translation = link->translation();
     self->rotation = link->rotation();
     sceneLink = new SceneLink(new Link());
-    self->setName(link->name());
+
+    if (self->name().size() == 0)
+        self->setName(link->name());
 
     axisCylinderNormalizedRadius = 0.04;
     

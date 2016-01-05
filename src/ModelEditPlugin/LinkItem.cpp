@@ -22,6 +22,7 @@
 #include <cnoid/SceneBody>
 #include <cnoid/VRML>
 #include <cnoid/VRMLBody>
+#include <cnoid/VRMLWriter>
 #include <cnoid/MeshGenerator>
 #include "ModelEditDragger.h"
 #include <cnoid/FileUtil>
@@ -32,6 +33,8 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+#include <assimp/Importer.hpp>
+#include <assimp/Exporter.hpp>
 #include "gettext.h"
 
 using namespace std;
@@ -185,7 +188,18 @@ void LinkItemImpl::init()
     self->translation = link->translation();
     self->rotation = link->rotation();
     sceneLink = new SceneLink(link);
-    self->setName(link->name());
+
+    if(self->name().size() == 0){
+        SgGroup* group = dynamic_cast<SgGroup*>(link->shape());
+        if(group && group->numChildObjects() > 0){
+            SgNode* node = group->child(0);
+            if(node->name().size() != 0){
+                self->setName(node->name());
+            }else{
+                self->setName(link->name() + "_LINK");
+            }
+        }
+    }
 
     attachPositionDragger();
 
@@ -295,7 +309,7 @@ VRMLNodePtr LinkItemImpl::toVRML()
     trans = new VRMLTransform();
     JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
     if (parentjoint) {
-        node->defName = parentjoint->name() + "_LINK";
+        node->defName = self->name();
         Affine3 parent, child, relative;
         parent.translation() = parentjoint->translation;
         parent.linear() = parentjoint->rotation;
@@ -331,6 +345,23 @@ string LinkItemImpl::toURDF()
     JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
     Affine3 relative;
     if (parentjoint) {
+        string meshfname = "";
+        Assimp::Importer* im;
+        std::stringstream vrml;
+        if (self->originalNode) {
+            VRMLProtoInstancePtr original = dynamic_pointer_cast<VRMLProtoInstance>(self->originalNode);
+            if (original) {
+                VRMLWriter* writer = new VRMLWriter(vrml);
+                writer->setOutFileName("temp");
+                writer->writeNode(original);
+            }
+        }
+        const aiScene* ashape;
+        ashape = im->ReadFileFromMemory(vrml.str().c_str(), vrml.str().length(), 0);
+        Assimp::Exporter* ex;
+        ex = new Assimp::Exporter();
+        ex->Export(ashape, "collada", meshfname + ".dae");
+        ex->Export(ashape, "stl", meshfname + ".stl");
         Affine3 parent, child;
         parent.translation() = parentjoint->translation;
         parent.linear() = parentjoint->rotation;
@@ -348,14 +379,16 @@ string LinkItemImpl::toURDF()
            << "\" iyz=\"" << momentsOfInertia(1, 2)
            << "\" izz=\"" << momentsOfInertia(2, 2) << "\" />" << endl;
         ss << " </inertial>" << endl;
-        /*
-          if (self->originalNode) {
-          VRMLProtoInstancePtr original = dynamic_pointer_cast<VRMLProtoInstance>(self->originalNode);
-          if (original) {
-          trans->children = get<MFNode>(original->fields["children"]);
-          }
-          }
-        */
+        ss << " <visual>" << endl;
+        ss << "  <geometry>" << endl;
+        ss << "   <mesh filename=\"" << meshfname << ".dae\" />" << endl;
+        ss << "  </geometry>" << endl;
+        ss << " </visual>" << endl;
+        ss << " <collision>" << endl;
+        ss << "  <geometry>" << endl;
+        ss << "   <mesh filename=\"" << meshfname << ".stl\" />" << endl;
+        ss << "  </geometry>" << endl;
+        ss << " </collision>" << endl;
         ss << "</link>" << endl;
     }
     return ss.str();
