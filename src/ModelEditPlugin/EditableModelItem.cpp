@@ -190,7 +190,6 @@ void EditableModelItemImpl::setLinkTreeSub(Link* link, VRMLBodyLoader* vloader, 
     // next, create link item under the joint item
     LinkItemPtr litem = new LinkItem(link);
     litem->originalNode = vloader->getOriginalNode(link);
-    litem->setName("link");
     item->addChildItem(litem);
     SgNode* collisionShape = link->collisionShape();
     if (collisionShape != link->visualShape()) {

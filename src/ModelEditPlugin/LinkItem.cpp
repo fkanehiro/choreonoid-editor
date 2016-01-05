@@ -188,7 +188,18 @@ void LinkItemImpl::init()
     self->translation = link->translation();
     self->rotation = link->rotation();
     sceneLink = new SceneLink(link);
-    self->setName(link->name());
+
+    if(self->name().size() == 0){
+        SgGroup* group = dynamic_cast<SgGroup*>(link->shape());
+        if(group && group->numChildObjects() > 0){
+            SgNode* node = group->child(0);
+            if(node->name().size() != 0){
+                self->setName(node->name());
+            }else{
+                self->setName(link->name() + "_LINK");
+            }
+        }
+    }
 
     attachPositionDragger();
 
@@ -298,7 +309,7 @@ VRMLNodePtr LinkItemImpl::toVRML()
     trans = new VRMLTransform();
     JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
     if (parentjoint) {
-        node->defName = parentjoint->name() + "_LINK";
+        node->defName = self->name();
         Affine3 parent, child, relative;
         parent.translation() = parentjoint->translation;
         parent.linear() = parentjoint->rotation;
