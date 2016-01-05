@@ -295,8 +295,8 @@ void PrimitiveShapeItemImpl::onUpdated()
     }
     shape = new SgShape;
     SgMaterial* material = new SgMaterial;
-    material->setDiffuseColor(Vector3f::Zero());
-    material->setEmissiveColor(primitiveColor);
+    material->setDiffuseColor(primitiveColor);
+    material->setEmissiveColor(Vector3f::Zero());
     material->setAmbientIntensity(0.0f);
     material->setTransparency(0.0f);
     MeshGenerator meshGenerator;
