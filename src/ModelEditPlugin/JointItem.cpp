@@ -60,6 +60,13 @@ public:
     Vector3 jointAxis;
     double ulimit;
     double llimit;
+    double uvlimit;
+    double lvlimit;
+    double gearRatio;
+    double rotorInertia;
+    double rotorResistor;
+    double torqueConst;
+    double encoderPulse;
     bool isselected;
 
     SceneLinkPtr sceneLink;
@@ -165,6 +172,10 @@ void JointItemImpl::init()
     jointAxis = link->jointAxis();
     ulimit = link->q_upper();
     llimit = link->q_lower();
+    uvlimit = link->dq_upper();
+    lvlimit = link->dq_lower();
+    // TODO: have to set rotorInertia, gearRatio, encoderPulse, etc
+    //       may be needed to get from the original VRML info.
     self->translation = link->translation();
     self->rotation = link->rotation();
     sceneLink = new SceneLink(new Link());
@@ -357,6 +368,13 @@ void JointItemImpl::doPutProperties(PutPropertyFunction& putProperty)
                     boost::bind(&JointItemImpl::setJointAxis, this, _1));
         putProperty.decimals(4)(_("Upper limit"), ulimit, changeProperty(ulimit));
         putProperty.decimals(4)(_("Lower limit"), llimit, changeProperty(llimit));
+        putProperty.decimals(4)(_("Upper velocity limit"), uvlimit, changeProperty(uvlimit));
+        putProperty.decimals(4)(_("Lower velocity limit"), lvlimit, changeProperty(lvlimit));
+        putProperty.decimals(4)(_("Gear ratio"), gearRatio, changeProperty(gearRatio));
+        putProperty.decimals(4)(_("Rotor inertia"), rotorInertia, changeProperty(rotorInertia));
+        putProperty.decimals(4)(_("Rotor resistor"), rotorResistor, changeProperty(rotorResistor));
+        putProperty.decimals(4)(_("Torque const"), torqueConst, changeProperty(torqueConst));
+        putProperty.decimals(4)(_("Encoder pulse"), encoderPulse, changeProperty(encoderPulse));
     }
     putProperty.decimals(4).min(0.0)(_("Axis size"), radius(),
                                      boost::bind(&JointItemImpl::setRadius, this, _1), true);
@@ -391,6 +409,15 @@ VRMLNodePtr JointItemImpl::toVRML()
     node->ulimit.push_back(ulimit);
     node->llimit.clear();
     node->llimit.push_back(llimit);
+    node->uvlimit.clear();
+    node->uvlimit.push_back(uvlimit);
+    node->lvlimit.clear();
+    node->lvlimit.push_back(lvlimit);
+    node->gearRatio = gearRatio;
+    node->rotorInertia = rotorInertia;
+    node->rotorResistor = rotorResistor;
+    node->torqueConst = torqueConst;
+    node->encoderPulse = encoderPulse;
     JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
     if (parentjoint) {
         Affine3 parent, child, relative;

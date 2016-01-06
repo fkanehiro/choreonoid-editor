@@ -63,8 +63,11 @@ public:
     double nearDistance;
     double farDistance;
     double fieldOfView;
+    double frameRate;
     Vector3 maxForce;
     Vector3 maxTorque;
+    Vector3 maxAngularVelocity;
+    Vector3 maxAcceleration;
     bool isselected;
 
     SceneLinkPtr sceneLink;
@@ -90,6 +93,8 @@ public:
     void setRadius(double val);
     bool onMaxForceChanged(const std::string& value);
     bool onMaxTorqueChanged(const std::string& value);
+    bool onMaxAngularVelocityChanged(const std::string& value);
+    bool onMaxAccelerationChanged(const std::string& value);
     VRMLNodePtr toVRML();
     string toURDF();
     void doAssign(Item* srcItem);
@@ -235,6 +240,16 @@ void SensorItemImpl::syncDevice()
         maxForce = fsensor->F_max().head<3>();
         maxTorque = fsensor->F_max().tail<3>();
     }
+    RateGyroSensor* gyro = dynamic_cast<RateGyroSensor*>(device);
+    if (gyro) {
+        sensorType.select("gyro");
+        maxAngularVelocity = gyro->w_max();
+    }
+    AccelerationSensor* asensor = dynamic_cast<AccelerationSensor*>(device);
+    if (asensor) {
+        sensorType.select("acceleration");
+        maxAcceleration = asensor->dv_max();
+    }
     Camera* camera = dynamic_cast<Camera*>(device);
     if (camera) {
         sensorType.select("camera");
@@ -262,6 +277,7 @@ void SensorItemImpl::syncDevice()
         }
         resolutionX = camera->resolutionX();
         resolutionY = camera->resolutionY();
+        frameRate = camera->frameRate();
         fieldOfView = camera->fieldOfView();
         nearDistance = camera->nearDistance();
         farDistance = camera->farDistance();
@@ -406,11 +422,16 @@ void SensorItemImpl::doPutProperties(PutPropertyFunction& putProperty)
                     boost::bind(&Selection::selectIndex, &cameraType, _1));
         putProperty.decimals(4).min(0)(_("Resolution X"), resolutionX, changeProperty(resolutionX));
         putProperty.decimals(4).min(0)(_("Resolution Y"), resolutionY, changeProperty(resolutionY));
+        putProperty.decimals(4).min(0)(_("Frame rate"), frameRate, changeProperty(frameRate));
         putProperty.decimals(4)(_("Near distance"), nearDistance, changeProperty(nearDistance));
         putProperty.decimals(4)(_("Far distance"), farDistance, changeProperty(farDistance));
     } else if (st == "force") {
         putProperty("Max force", str(maxForce), boost::bind(&SensorItemImpl::onMaxForceChanged, this, _1));
         putProperty("Max torque", str(maxTorque), boost::bind(&SensorItemImpl::onMaxTorqueChanged, this, _1));
+    } else if (st == "gyro") {
+        putProperty("Max angular velocity", str(maxAngularVelocity), boost::bind(&SensorItemImpl::onMaxAngularVelocityChanged, this, _1));
+    } else if (st == "acceleration") {
+        putProperty("Max acceleration", str(maxAcceleration), boost::bind(&SensorItemImpl::onMaxAccelerationChanged, this, _1));
     }
 }
 
@@ -434,6 +455,26 @@ bool SensorItemImpl::onMaxTorqueChanged(const std::string& value)
     return false;
 }
 
+bool SensorItemImpl::onMaxAngularVelocityChanged(const std::string& value)
+{
+    Vector3 p;
+    if(toVector3(value, p)){
+        maxAngularVelocity = p;
+        return true;
+    }
+    return false;
+}
+
+bool SensorItemImpl::onMaxAccelerationChanged(const std::string& value)
+{
+    Vector3 p;
+    if(toVector3(value, p)){
+        maxAcceleration = p;
+        return true;
+    }
+    return false;
+}
+
 VRMLNodePtr SensorItem::toVRML()
 {
     return impl->toVRML();
@@ -449,12 +490,20 @@ VRMLNodePtr SensorItemImpl::toVRML()
         fnode->maxForce = maxForce;
         fnode->maxTorque = maxTorque;
         node = fnode;
-    }
-    if (st == "camera") {
+    } else if (st == "gyro") {
+        VRMLGyroPtr gnode = new VRMLGyro();
+        gnode->maxAngularVelocity = maxAngularVelocity;
+        node = gnode;
+    } else if (st == "acceleration") {
+        VRMLAccelerationSensorPtr anode = new VRMLAccelerationSensor();
+        anode->maxAcceleration = maxAcceleration;
+        node = anode;
+    } else if (st == "camera") {
         VRMLVisionSensorPtr cnode = new VRMLVisionSensor();
         cnode->type = cameraType.selectedSymbol();
         cnode->width = resolutionX;
         cnode->height = resolutionY;
+        cnode->frameRate = frameRate;
         cnode->fieldOfView = fieldOfView;
         cnode->frontClipDistance = nearDistance;
         cnode->backClipDistance = farDistance;
