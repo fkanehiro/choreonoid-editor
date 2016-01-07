@@ -22,6 +22,7 @@
 #include <cnoid/SceneShape>
 #include <cnoid/Sensor>
 #include <cnoid/Camera>
+#include <cnoid/RangeSensor>
 #include <cnoid/VRMLBody>
 #include "ModelEditDragger.h"
 #include <cnoid/FileUtil>
@@ -68,6 +69,11 @@ public:
     Vector3 maxTorque;
     Vector3 maxAngularVelocity;
     Vector3 maxAcceleration;
+    double scanAngle;
+    double scanStep;
+    double scanRate;
+    double minDistance;
+    double maxDistance;
     bool isselected;
 
     SceneLinkPtr sceneLink;
@@ -249,6 +255,18 @@ void SensorItemImpl::syncDevice()
     if (asensor) {
         sensorType.select("acceleration");
         maxAcceleration = asensor->dv_max();
+    }
+    RangeSensor* rsensor = dynamic_cast<RangeSensor*>(device);
+    if (rsensor) {
+        sensorType.select("range");
+        if (rsensor->yawRange() > 0)
+            scanAngle = rsensor->yawRange();
+        else
+            scanAngle = rsensor->pitchRange();
+        scanStep = rsensor->pitchStep();
+        scanRate = rsensor->frameRate();
+        minDistance = rsensor->minDistance();
+        maxDistance = rsensor->maxDistance();
     }
     Camera* camera = dynamic_cast<Camera*>(device);
     if (camera) {
@@ -432,6 +450,12 @@ void SensorItemImpl::doPutProperties(PutPropertyFunction& putProperty)
         putProperty("Max angular velocity", str(maxAngularVelocity), boost::bind(&SensorItemImpl::onMaxAngularVelocityChanged, this, _1));
     } else if (st == "acceleration") {
         putProperty("Max acceleration", str(maxAcceleration), boost::bind(&SensorItemImpl::onMaxAccelerationChanged, this, _1));
+    } else if (st == "range") {
+        putProperty("Scan angle", scanAngle, changeProperty(scanAngle));
+        putProperty("Scan step", scanStep, changeProperty(scanStep));
+        putProperty("Scan rate", scanRate, changeProperty(scanRate));
+        putProperty("Min distance", minDistance, changeProperty(minDistance));
+        putProperty("Max distance", maxDistance, changeProperty(maxDistance));
     }
 }
 
@@ -498,6 +522,14 @@ VRMLNodePtr SensorItemImpl::toVRML()
         VRMLAccelerationSensorPtr anode = new VRMLAccelerationSensor();
         anode->maxAcceleration = maxAcceleration;
         node = anode;
+    } else if (st == "range") {
+        VRMLRangeSensorPtr rnode = new VRMLRangeSensor();
+        rnode->scanAngle = scanAngle;
+        rnode->scanStep = scanStep;
+        rnode->scanRate = scanRate;
+        rnode->minDistance = minDistance;
+        rnode->maxDistance = maxDistance;
+        node = rnode;
     } else if (st == "camera") {
         VRMLVisionSensorPtr cnode = new VRMLVisionSensor();
         cnode->type = cameraType.selectedSymbol();
