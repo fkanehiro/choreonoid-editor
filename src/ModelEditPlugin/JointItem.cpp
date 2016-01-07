@@ -174,8 +174,14 @@ void JointItemImpl::init()
     llimit = link->q_lower();
     uvlimit = link->dq_upper();
     lvlimit = link->dq_lower();
-    // TODO: have to set rotorInertia, gearRatio, encoderPulse, etc
-    //       may be needed to get from the original VRML info.
+    VRMLJointPtr node;
+    node = new VRMLJoint();  // TODO: at this moment, we use original variable but we have to read this from original VRML
+    gearRatio = node->gearRatio;
+    rotorInertia = node->rotorInertia;
+    rotorResistor = node->rotorResistor;
+    torqueConst = node->torqueConst;
+    encoderPulse = node->encoderPulse;
+    
     self->translation = link->translation();
     self->rotation = link->rotation();
     sceneLink = new SceneLink(new Link());
@@ -359,7 +365,7 @@ void JointItem::doPutProperties(PutPropertyFunction& putProperty)
 void JointItemImpl::doPutProperties(PutPropertyFunction& putProperty)
 {
     ostringstream oss;
-    putProperty.decimals(4)(_("Joint ID"), jointId);
+    putProperty.decimals(4)(_("Joint ID"), jointId, changeProperty(jointId));
     putProperty(_("Joint type"), jointType,
                 boost::bind(&Selection::selectIndex, &jointType, _1));
     string jt(jointType.selectedSymbol());
