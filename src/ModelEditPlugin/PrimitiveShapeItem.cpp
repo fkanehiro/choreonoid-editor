@@ -484,7 +484,7 @@ void PrimitiveShapeItem::doPutProperties(PutPropertyFunction& putProperty)
 void PrimitiveShapeItemImpl::doPutProperties(PutPropertyFunction& putProperty)
 {
     ostringstream oss;
-    putProperty.decimals(4)(_("Mass"), mass);
+    putProperty.decimals(4)(_("Mass"), mass, changeProperty(mass));
     putProperty(_("Center of mass"), str(Vector3(centerOfMass)),
                 boost::bind(&PrimitiveShapeItemImpl::setCenterOfMass, this, _1));
     oss.str("");
