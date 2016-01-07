@@ -413,7 +413,7 @@ void LinkItemImpl::doPutProperties(PutPropertyFunction& putProperty)
     ostringstream oss;
     //putProperty(_("Model name"), link->name());
     //putProperty(_("Model file"), getFilename(boost::filesystem::path(self->filePath())));
-    putProperty.decimals(4)(_("Mass"), mass);
+    putProperty.decimals(4)(_("Mass"), mass, changeProperty(mass));
     putProperty(_("Center of mass"), str(Vector3(centerOfMass)),
                 boost::bind(&LinkItemImpl::setCenterOfMass, this, _1));
     oss.str("");
