@@ -73,6 +73,7 @@ public:
     SgScaleTransformPtr defaultAxesScale;
     SgMaterialPtr axisMaterials[3];
     double axisCylinderNormalizedRadius;
+    SgPosTransformPtr axisShape;
 
     //ModelEditDraggerPtr positionDragger;
     PositionDraggerPtr positionDragger;
@@ -302,6 +303,34 @@ void JointItemImpl::onUpdated()
 {
     sceneLink->translation() = self->translation;
     sceneLink->rotation() = self->rotation;
+
+    // draw shape indicator for joint axis
+    if (axisShape) {
+        sceneLink->removeChild(axisShape);
+        axisShape = NULL;
+    }
+    string jt(jointType.selectedSymbol());
+    if (jt != "free" && jt != "fixed") {
+        axisShape = new SgPosTransform;
+        SgShapePtr shape = new SgShape;
+        SgMaterialPtr material = new SgMaterial;
+        material->setDiffuseColor(Vector3f(1.0f, 0.0f, 0.0f));
+        material->setEmissiveColor(Vector3f::Zero());
+        material->setAmbientIntensity(0.0f);
+        material->setTransparency(0.0f);
+        MeshGenerator meshGenerator;
+        SgMeshPtr mesh = meshGenerator.generateDisc(0.15, 0.12);
+        shape->setMesh(mesh);
+        shape->setMaterial(material);
+        axisShape->addChild(shape);
+        if (jointAxis[0] == 0 && jointAxis[1] == 1 && jointAxis[2] == 0) {
+            axisShape->setRotation(AngleAxis( PI / 2.0, Vector3::UnitX()));
+        }
+        if (jointAxis[0] == 0 && jointAxis[1] == 0 && jointAxis[2] == 1) {
+            axisShape->setRotation(AngleAxis(-PI / 2.0, Vector3::UnitZ()));
+        }
+        sceneLink->addChildOnce(axisShape);
+    }
     sceneLink->notifyUpdate();
 }
 
