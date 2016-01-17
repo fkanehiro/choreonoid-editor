@@ -66,6 +66,7 @@ public:
     SgNode* mesh;
     SgShape* shape;
 
+    Vector3 dragStartTranslation;
     //ModelEditDraggerPtr positionDragger;
     PositionDraggerPtr positionDragger;
 
@@ -140,7 +141,7 @@ LinkItemImpl::LinkItemImpl(LinkItem* self, Link* link)
 
 
 LinkItem::LinkItem(const LinkItem& org)
-    : Item(org)
+    : EditableModelBase(org)
 {
     impl = new LinkItemImpl(this, *org.impl);
 }
@@ -253,6 +254,7 @@ void LinkItemImpl::onSelectionChanged()
 
 void LinkItemImpl::onDraggerStarted()
 {
+    dragStartTranslation = positionDragger->draggedPosition().translation();
 }
 
 

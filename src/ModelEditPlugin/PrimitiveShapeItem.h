@@ -21,7 +21,7 @@ class PrimitiveShapeItem;
 typedef ref_ptr<PrimitiveShapeItem> PrimitiveShapeItemPtr;
 class PrimitiveShapeItemImpl;
 
-class CNOID_EXPORT PrimitiveShapeItem : public Item, public SceneProvider, public EditableModelBase
+class CNOID_EXPORT PrimitiveShapeItem : public SceneProvider, public EditableModelBase
 {
 public:
     static void initializeClass(ExtensionManager* ext);

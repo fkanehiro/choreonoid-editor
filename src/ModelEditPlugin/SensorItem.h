@@ -21,7 +21,7 @@ class SensorItem;
 typedef ref_ptr<SensorItem> SensorItemPtr;
 class SensorItemImpl;
 
-class CNOID_EXPORT SensorItem : public Item, public SceneProvider, public EditableModelBase
+class CNOID_EXPORT SensorItem : public SceneProvider, public EditableModelBase
 {
 public:
     static void initializeClass(ExtensionManager* ext);

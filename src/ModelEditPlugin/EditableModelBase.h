@@ -17,7 +17,7 @@
 
 namespace cnoid {
 
-class CNOID_EXPORT EditableModelBase
+class CNOID_EXPORT EditableModelBase : public Item
 {
 public:
     EditableModelBase();

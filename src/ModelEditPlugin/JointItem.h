@@ -20,7 +20,7 @@ class JointItem;
 typedef ref_ptr<JointItem> JointItemPtr;
 class JointItemImpl;
 
-class CNOID_EXPORT JointItem : public Item, public SceneProvider, public EditableModelBase
+class CNOID_EXPORT JointItem : public SceneProvider, public EditableModelBase
 {
 public:
     static void initializeClass(ExtensionManager* ext);

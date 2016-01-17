@@ -153,7 +153,7 @@ SensorItemImpl::SensorItemImpl(SensorItem* self, Device* dev)
 
 
 SensorItem::SensorItem(const SensorItem& org)
-    : Item(org)
+    : EditableModelBase(org)
 {
     impl = new SensorItemImpl(this, *org.impl);
 }

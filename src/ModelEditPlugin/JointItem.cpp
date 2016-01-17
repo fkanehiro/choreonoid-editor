@@ -75,6 +75,7 @@ public:
     double axisCylinderNormalizedRadius;
     SgPosTransformPtr axisShape;
 
+    Vector3 prevDragTranslation;
     //ModelEditDraggerPtr positionDragger;
     PositionDraggerPtr positionDragger;
 
@@ -88,6 +89,7 @@ public:
     void attachPositionDragger();
     void onDraggerStarted();
     void onDraggerDragged();
+    void onDraggerDraggedRecur(Item *parent, Vector3 dragdiff);
     void onUpdated();
     void onPositionChanged();
     double radius() const;
@@ -145,7 +147,7 @@ JointItemImpl::JointItemImpl(JointItem*self, Link* link)
 
 
 JointItem::JointItem(const JointItem& org)
-    : Item(org)
+    : EditableModelBase(org)
 {
     impl = new JointItemImpl(this, *org.impl);
 }
@@ -288,13 +290,29 @@ void JointItemImpl::attachPositionDragger()
 
 void JointItemImpl::onDraggerStarted()
 {
+    prevDragTranslation = positionDragger->draggedPosition().translation();
 }
 
+
+void JointItemImpl::onDraggerDraggedRecur(Item *parent, Vector3 dragdiff)
+{
+    for(Item* child = parent->childItem(); child; child = child->nextItem()){
+        EditableModelBase* item = dynamic_cast<EditableModelBase*>(child);
+        if (item) {
+            item->translation += dragdiff;
+            item->notifyUpdate();
+            onDraggerDraggedRecur(child, dragdiff);
+        }
+    }
+}
 
 void JointItemImpl::onDraggerDragged()
 {
     self->translation = positionDragger->draggedPosition().translation();
     self->rotation = positionDragger->draggedPosition().rotation();
+    Vector3 dragdiff = self->translation - prevDragTranslation;
+    onDraggerDraggedRecur(self, dragdiff);
+    prevDragTranslation = self->translation;
     self->notifyUpdate();
 }
 
