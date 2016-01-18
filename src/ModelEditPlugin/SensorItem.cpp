@@ -188,6 +188,7 @@ void SensorItemImpl::init()
     cameraType.select("COLOR");
 
     sceneLink = new SceneLink(new Link());
+    sensorShape = NULL;
 
     axisCylinderNormalizedRadius = 0.04;
     
@@ -344,9 +345,8 @@ void SensorItemImpl::onDraggerStarted()
 
 void SensorItemImpl::onDraggerDragged()
 {
-    device->link()->position() = positionDragger->draggedPosition();
-    sceneLink->setPosition(device->link()->position());
-    sceneLink->notifyUpdate();
+    self->translation = positionDragger->draggedPosition().translation();
+    self->rotation = positionDragger->draggedPosition().rotation();
     self->notifyUpdate();
  }
 
