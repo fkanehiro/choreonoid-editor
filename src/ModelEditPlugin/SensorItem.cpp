@@ -144,11 +144,12 @@ SensorItemImpl::SensorItemImpl(SensorItem* self, Device* dev)
     : self(self)
 {
     this->device = dev;
+    self->setName(dev->name());
+    Affine3 position = dev->link()->position() * dev->T_local();
+    self->translation = position.translation();
+    self->rotation = position.rotation();
     init();
     syncDevice();
-    sceneLink->setPosition(dev->link()->position());
-    sceneLink->notifyUpdate();
-    self->setName(dev->name());
 }
 
 
@@ -388,17 +389,27 @@ void SensorItemImpl::onUpdated()
         material->setAmbientIntensity(0.0f);
         material->setTransparency(0.5f);
         
-        SgMeshPtr mesh = new SgMesh;
         double d = 0.50;
         double w = 0.50;
         double h = 0.40;
+        if (fieldOfView > 0.0 && resolutionX > 0.0 && resolutionY > 0.0) {
+            double aspect = (double)resolutionX / (double)resolutionY;
+            if (aspect >= 1.0) {
+                w = 2.0 * d * tan(fieldOfView / 2.0);
+                h = w / aspect;
+            } else {
+                h = 2.0 * d * tan(fieldOfView / 2.0);
+                w = h * aspect;
+            }
+        }
+        SgMeshPtr mesh = new SgMesh;
         SgVertexArray& vertices = *mesh->setVertices(new SgVertexArray());
         vertices.reserve(5);
-        vertices.push_back(Vector3f(0,    0,    0));
-        vertices.push_back(Vector3f(d, -w/2, -h/2));
-        vertices.push_back(Vector3f(d, -w/2,  h/2));
-        vertices.push_back(Vector3f(d,  w/2,  h/2));
-        vertices.push_back(Vector3f(d,  w/2, -h/2));
+        vertices.push_back(Vector3f(   0,    0,  0));
+        vertices.push_back(Vector3f(-w/2, -h/2, -d));
+        vertices.push_back(Vector3f(-w/2,  h/2, -d));
+        vertices.push_back(Vector3f( w/2,  h/2, -d));
+        vertices.push_back(Vector3f( w/2, -h/2, -d));
         
         mesh->reserveNumTriangles(4);
         mesh->addTriangle(0,1,2);
@@ -482,6 +493,7 @@ void SensorItemImpl::doPutProperties(PutPropertyFunction& putProperty)
         putProperty.decimals(4).min(0)(_("Resolution X"), resolutionX, changeProperty(resolutionX));
         putProperty.decimals(4).min(0)(_("Resolution Y"), resolutionY, changeProperty(resolutionY));
         putProperty.decimals(4).min(0)(_("Frame rate"), frameRate, changeProperty(frameRate));
+        putProperty.decimals(4)(_("Field of view"), fieldOfView, changeProperty(fieldOfView));
         putProperty.decimals(4)(_("Near distance"), nearDistance, changeProperty(nearDistance));
         putProperty.decimals(4)(_("Far distance"), farDistance, changeProperty(farDistance));
     } else if (st == "force") {
