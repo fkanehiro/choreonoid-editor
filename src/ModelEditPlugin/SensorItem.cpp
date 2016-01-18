@@ -287,6 +287,7 @@ void SensorItemImpl::syncDevice()
         nearDistance = camera->nearDistance();
         farDistance = camera->farDistance();
     }
+    onUpdated();
 }
 
 
