@@ -303,11 +303,12 @@ void LinkItemImpl::onUpdated()
         inertmaterial->setEmissiveColor(Vector3f::Zero());
         inertmaterial->setAmbientIntensity(0.0f);
         inertmaterial->setTransparency(0.5f);
-        SgMeshPtr inertmesh = meshGenerator.generateSphere(1);
+        SgMeshPtr inertmesh = meshGenerator.generateSphere(0.1);
         inertshape->setMesh(inertmesh);
         inertshape->setMaterial(inertmaterial);
         inertscale->addChild(inertshape);
-        inertscale->setScale(Vector3(momentsOfInertia(0,0), momentsOfInertia(1,1), momentsOfInertia(2,2)));
+        Matrix3 moiinv = momentsOfInertia.inverse();
+        inertscale->setScale(Vector3(moiinv(0,0), moiinv(1,1), moiinv(2,2)).normalized());
         massShape->addChild(inertscale);
         
         massShape->setTranslation(centerOfMass);
