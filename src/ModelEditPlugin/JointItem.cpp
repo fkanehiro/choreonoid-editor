@@ -341,6 +341,9 @@ void JointItemImpl::onUpdated()
         shape->setMesh(mesh);
         shape->setMaterial(material);
         axisShape->addChild(shape);
+        if (jointAxis[0] == 1 && jointAxis[1] == 0 && jointAxis[2] == 0) {
+            axisShape->setRotation(AngleAxis( PI / 2.0, Vector3::UnitY()));
+        }
         if (jointAxis[0] == 0 && jointAxis[1] == 1 && jointAxis[2] == 0) {
             axisShape->setRotation(AngleAxis( PI / 2.0, Vector3::UnitX()));
         }
