@@ -444,6 +444,36 @@ void SensorItemImpl::onUpdated()
         shape->setMaterial(material);
         sensorShape->addChild(shape);
         sceneLink->addChildOnce(sensorShape);
+    }else if (st == "range") {
+        sensorShape = new SgPosTransform;
+        SgShapePtr shape = new SgShape;
+        SgMaterialPtr material = new SgMaterial;
+        material->setDiffuseColor(Vector3f(0.0f, 0.0f, 1.0f));
+        material->setEmissiveColor(Vector3f::Zero());
+        material->setAmbientIntensity(0.0f);
+        material->setTransparency(0.5f);
+        
+        double d = 0.50;
+        double w = 2.0 * d * tan(scanAngle / 2.0);
+        SgMeshPtr mesh = new SgMesh;
+        SgVertexArray& vertices = *mesh->setVertices(new SgVertexArray());
+        vertices.reserve(3);
+        vertices.push_back(Vector3f(   0, 0,  0));
+        vertices.push_back(Vector3f(-w/2, 0, -d));
+        vertices.push_back(Vector3f( w/2, 0, -d));
+        
+        mesh->reserveNumTriangles(1);
+        mesh->addTriangle(0,1,2);
+
+        MeshNormalGenerator normalGenerator;
+        normalGenerator.generateNormals(mesh, 0);
+        
+        mesh->updateBoundingBox();
+        
+        shape->setMesh(mesh);
+        shape->setMaterial(material);
+        sensorShape->addChild(shape);
+        sceneLink->addChildOnce(sensorShape);
     }
     sceneLink->notifyUpdate();
 }
