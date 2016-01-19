@@ -26,6 +26,7 @@
 #include <cnoid/VRMLBody>
 #include "ModelEditDragger.h"
 #include <cnoid/FileUtil>
+#include <cnoid/MeshNormalGenerator>
 #include <cnoid/MeshGenerator>
 #include <cnoid/RangeCamera>
 #include <boost/bind.hpp>
@@ -80,6 +81,7 @@ public:
     SgScaleTransformPtr defaultAxesScale;
     SgMaterialPtr axisMaterials[3];
     double axisCylinderNormalizedRadius;
+    SgPosTransformPtr sensorShape;
 
     ModelEditDraggerPtr positionDragger;
 
@@ -94,7 +96,7 @@ public:
     void attachPositionDragger();
     void onDraggerStarted();
     void onDraggerDragged();
-    void onPositionChanged();
+    void onUpdated();
     double radius() const;
     void setRadius(double val);
     bool onMaxForceChanged(const std::string& value);
@@ -148,16 +150,17 @@ SensorItemImpl::SensorItemImpl(SensorItem* self, Device* dev)
     : self(self)
 {
     this->device = dev;
+    self->setName(dev->name());
+    Affine3 position = dev->link()->position() * dev->T_local();
+    self->translation = position.translation();
+    self->rotation = position.rotation();
     init();
     syncDevice();
-    sceneLink->setPosition(dev->link()->position());
-    sceneLink->notifyUpdate();
-    self->setName(dev->name());
 }
 
 
 SensorItem::SensorItem(const SensorItem& org)
-    : Item(org)
+    : EditableModelBase(org)
 {
     impl = new SensorItemImpl(this, *org.impl);
 }
@@ -192,6 +195,7 @@ void SensorItemImpl::init()
     cameraType.select("COLOR");
 
     sceneLink = new SceneLink(new Link());
+    sensorShape = NULL;
 
     axisCylinderNormalizedRadius = 0.04;
     
@@ -229,13 +233,15 @@ void SensorItemImpl::init()
     }
     sceneLink->addChild(defaultAxesScale);
 
-    setRadius(0.3);
-
     attachPositionDragger();
     
-    self->sigPositionChanged().connect(boost::bind(&SensorItemImpl::onPositionChanged, this));
+    setRadius(0.15);
+
+    self->sigUpdated().connect(boost::bind(&SensorItemImpl::onUpdated, this));
     ItemTreeView::mainInstance()->sigSelectionChanged().connect(boost::bind(&SensorItemImpl::onSelectionChanged, this));
     isselected = false;
+
+    onUpdated();
 }
 
 void SensorItemImpl::syncDevice()
@@ -300,6 +306,7 @@ void SensorItemImpl::syncDevice()
         nearDistance = camera->nearDistance();
         farDistance = camera->farDistance();
     }
+    onUpdated();
 }
 
 
@@ -315,7 +322,12 @@ void SensorItemImpl::onSelectionChanged()
     }
     if (isselected != selected) {
         isselected = selected;
-        positionDragger->setDraggerAlwaysShown(selected);
+        //positionDragger->setDraggerAlwaysShown(selected);
+        if (isselected) {
+            positionDragger->setDraggerAlwaysShown(true);
+        } else {
+            positionDragger->setDraggerAlwaysHidden(true);
+        }
     }
 }
 
@@ -329,6 +341,8 @@ double SensorItemImpl::radius() const
 void SensorItemImpl::setRadius(double r)
 {
     defaultAxesScale->setScale(r);
+    positionDragger->setRadius(r * 1.5);
+    sceneLink->notifyUpdate();
 }
 
 
@@ -351,9 +365,8 @@ void SensorItemImpl::onDraggerStarted()
 
 void SensorItemImpl::onDraggerDragged()
 {
-    device->link()->position() = positionDragger->draggedPosition();
-    sceneLink->setPosition(device->link()->position());
-    sceneLink->notifyUpdate();
+    self->translation = positionDragger->draggedPosition().translation();
+    self->rotation = positionDragger->draggedPosition().rotation();
     self->notifyUpdate();
  }
 
@@ -374,8 +387,65 @@ Device* SensorItem::device() const
 }
 
 
-void SensorItemImpl::onPositionChanged()
+void SensorItemImpl::onUpdated()
 {
+    sceneLink->translation() = self->translation;
+    sceneLink->rotation() = self->rotation;
+
+    // draw shape indicator for sensors
+    if (sensorShape) {
+        sceneLink->removeChild(sensorShape);
+        sensorShape = NULL;
+    }
+    string st(sensorType.selectedSymbol());
+    if (st == "camera") {
+        sensorShape = new SgPosTransform;
+        SgShapePtr shape = new SgShape;
+        SgMaterialPtr material = new SgMaterial;
+        material->setDiffuseColor(Vector3f(0.0f, 0.0f, 1.0f));
+        material->setEmissiveColor(Vector3f::Zero());
+        material->setAmbientIntensity(0.0f);
+        material->setTransparency(0.5f);
+        
+        double d = 0.50;
+        double w = 0.50;
+        double h = 0.40;
+        if (fieldOfView > 0.0 && resolutionX > 0.0 && resolutionY > 0.0) {
+            double aspect = (double)resolutionX / (double)resolutionY;
+            if (aspect >= 1.0) {
+                w = 2.0 * d * tan(fieldOfView / 2.0);
+                h = w / aspect;
+            } else {
+                h = 2.0 * d * tan(fieldOfView / 2.0);
+                w = h * aspect;
+            }
+        }
+        SgMeshPtr mesh = new SgMesh;
+        SgVertexArray& vertices = *mesh->setVertices(new SgVertexArray());
+        vertices.reserve(5);
+        vertices.push_back(Vector3f(   0,    0,  0));
+        vertices.push_back(Vector3f(-w/2, -h/2, -d));
+        vertices.push_back(Vector3f(-w/2,  h/2, -d));
+        vertices.push_back(Vector3f( w/2,  h/2, -d));
+        vertices.push_back(Vector3f( w/2, -h/2, -d));
+        
+        mesh->reserveNumTriangles(4);
+        mesh->addTriangle(0,1,2);
+        mesh->addTriangle(0,2,3);
+        mesh->addTriangle(0,3,4);
+        mesh->addTriangle(0,4,1);
+
+        MeshNormalGenerator normalGenerator;
+        normalGenerator.generateNormals(mesh, 0);
+        
+        mesh->updateBoundingBox();
+        
+        shape->setMesh(mesh);
+        shape->setMaterial(material);
+        sensorShape->addChild(shape);
+        sceneLink->addChildOnce(sensorShape);
+    }
+    sceneLink->notifyUpdate();
 }
 
 
@@ -441,6 +511,7 @@ void SensorItemImpl::doPutProperties(PutPropertyFunction& putProperty)
         putProperty.decimals(4).min(0)(_("Resolution X"), resolutionX, changeProperty(resolutionX));
         putProperty.decimals(4).min(0)(_("Resolution Y"), resolutionY, changeProperty(resolutionY));
         putProperty.decimals(4).min(0)(_("Frame rate"), frameRate, changeProperty(frameRate));
+        putProperty.decimals(4)(_("Field of view"), fieldOfView, changeProperty(fieldOfView));
         putProperty.decimals(4)(_("Near distance"), nearDistance, changeProperty(nearDistance));
         putProperty.decimals(4)(_("Far distance"), farDistance, changeProperty(farDistance));
     } else if (st == "force") {

@@ -139,7 +139,7 @@ PrimitiveShapeItemImpl::PrimitiveShapeItemImpl(PrimitiveShapeItem* self, Link* l
     
 
 PrimitiveShapeItem::PrimitiveShapeItem(const PrimitiveShapeItem& org)
-    : Item(org)
+    : EditableModelBase(org)
 {
     impl = new PrimitiveShapeItemImpl(this, *org.impl);
 }

@@ -62,10 +62,13 @@ public:
     Matrix3 momentsOfInertia;
     bool isselected;
 
-    SgPosTransform* sceneLink;
+    SceneLink* sceneLink;
     SgNode* mesh;
     SgShape* shape;
+    SgPosTransformPtr massShape;
+    bool visualizeMass;
 
+    Vector3 dragStartTranslation;
     //ModelEditDraggerPtr positionDragger;
     PositionDraggerPtr positionDragger;
 
@@ -140,7 +143,7 @@ LinkItemImpl::LinkItemImpl(LinkItem* self, Link* link)
 
 
 LinkItem::LinkItem(const LinkItem& org)
-    : Item(org)
+    : EditableModelBase(org)
 {
     impl = new LinkItemImpl(this, *org.impl);
 }
@@ -188,6 +191,8 @@ void LinkItemImpl::init()
     self->translation = link->translation();
     self->rotation = link->rotation();
     sceneLink = new SceneLink(link);
+    massShape = NULL;
+    visualizeMass = false;
 
     if(self->name().size() == 0){
         SgGroup* group = dynamic_cast<SgGroup*>(link->shape());
@@ -253,6 +258,7 @@ void LinkItemImpl::onSelectionChanged()
 
 void LinkItemImpl::onDraggerStarted()
 {
+    dragStartTranslation = positionDragger->draggedPosition().translation();
 }
 
 
@@ -267,6 +273,49 @@ void LinkItemImpl::onUpdated()
 {
     sceneLink->translation() = self->translation;
     sceneLink->rotation() = self->rotation;
+    
+    // draw shape indicator for mass
+    if (massShape) {
+        sceneLink->removeChild(massShape);
+        massShape = NULL;
+    }
+    if (visualizeMass) {
+        // hide original mesh
+        sceneLink->setVisible(false);
+        // generate CoM ball
+        massShape = new SgPosTransform;
+        SgShapePtr shape = new SgShape;
+        SgMaterialPtr commaterial = new SgMaterial;
+        commaterial->setDiffuseColor(Vector3f(1.0f, 0.0f, 0.0f));
+        commaterial->setEmissiveColor(Vector3f::Zero());
+        commaterial->setAmbientIntensity(0.0f);
+        commaterial->setTransparency(0.0f);
+        MeshGenerator meshGenerator;
+        SgMeshPtr mesh = meshGenerator.generateSphere(0.02);
+        shape->setMesh(mesh);
+        shape->setMaterial(commaterial);
+        massShape->addChild(shape);
+        // generate inertia shape
+        SgShapePtr inertshape = new SgShape;
+        SgScaleTransformPtr inertscale = new SgScaleTransform;
+        SgMaterialPtr inertmaterial = new SgMaterial;
+        inertmaterial->setDiffuseColor(Vector3f(0.0f, 0.0f, 1.0f));
+        inertmaterial->setEmissiveColor(Vector3f::Zero());
+        inertmaterial->setAmbientIntensity(0.0f);
+        inertmaterial->setTransparency(0.5f);
+        SgMeshPtr inertmesh = meshGenerator.generateSphere(0.1);
+        inertshape->setMesh(inertmesh);
+        inertshape->setMaterial(inertmaterial);
+        inertscale->addChild(inertshape);
+        Matrix3 moiinv = momentsOfInertia.inverse();
+        inertscale->setScale(Vector3(moiinv(0,0), moiinv(1,1), moiinv(2,2)).normalized());
+        massShape->addChild(inertscale);
+        
+        massShape->setTranslation(centerOfMass);
+        sceneLink->addChildOnce(massShape);
+    } else {
+        sceneLink->setVisible(true);
+    }
     sceneLink->notifyUpdate();
 }
 
@@ -420,6 +469,7 @@ void LinkItemImpl::doPutProperties(PutPropertyFunction& putProperty)
     oss << momentsOfInertia;
     putProperty(_("Inertia"), oss.str(),
                 boost::bind(&LinkItemImpl::setInertia, this, _1));
+    putProperty.decimals(4)(_("Visualize mass"), visualizeMass, changeProperty(visualizeMass));
 }
 
 

@@ -20,7 +20,7 @@ class LinkItem;
 typedef ref_ptr<LinkItem> LinkItemPtr;
 class LinkItemImpl;
 
-class CNOID_EXPORT LinkItem : public Item, public SceneProvider, public EditableModelBase
+class CNOID_EXPORT LinkItem : public SceneProvider, public EditableModelBase
 {
 public:
     static void initializeClass(ExtensionManager* ext);
