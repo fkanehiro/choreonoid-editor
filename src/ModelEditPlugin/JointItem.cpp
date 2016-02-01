@@ -78,6 +78,7 @@ public:
     Vector3 prevDragTranslation;
     //ModelEditDraggerPtr positionDragger;
     PositionDraggerPtr positionDragger;
+    Connection conSelectUpdate;
 
     JointItemImpl(JointItem* self);
     JointItemImpl(JointItem* self, Link* link);
@@ -233,7 +234,7 @@ void JointItemImpl::init()
     setRadius(0.15);
 
     self->sigUpdated().connect(boost::bind(&JointItemImpl::onUpdated, this));
-    ItemTreeView::mainInstance()->sigSelectionChanged().connect(boost::bind(&JointItemImpl::onSelectionChanged, this));
+    conSelectUpdate = ItemTreeView::mainInstance()->sigSelectionChanged().connect(boost::bind(&JointItemImpl::onSelectionChanged, this));
     isselected = false;
 
     onUpdated();
@@ -364,6 +365,7 @@ JointItem::~JointItem()
 
 JointItemImpl::~JointItemImpl()
 {
+    conSelectUpdate.disconnect();
 }
 
 

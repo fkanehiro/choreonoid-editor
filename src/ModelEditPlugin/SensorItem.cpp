@@ -84,6 +84,7 @@ public:
     SgPosTransformPtr sensorShape;
 
     ModelEditDraggerPtr positionDragger;
+    Connection conSelectUpdate;
 
     SensorItemImpl(SensorItem* self);
     SensorItemImpl(SensorItem* self, Device* dev);
@@ -238,7 +239,7 @@ void SensorItemImpl::init()
     setRadius(0.15);
 
     self->sigUpdated().connect(boost::bind(&SensorItemImpl::onUpdated, this));
-    ItemTreeView::mainInstance()->sigSelectionChanged().connect(boost::bind(&SensorItemImpl::onSelectionChanged, this));
+    conSelectUpdate = ItemTreeView::mainInstance()->sigSelectionChanged().connect(boost::bind(&SensorItemImpl::onSelectionChanged, this));
     isselected = false;
 
     onUpdated();
@@ -378,6 +379,7 @@ SensorItem::~SensorItem()
 
 SensorItemImpl::~SensorItemImpl()
 {
+    conSelectUpdate.disconnect();
 }
 
 
