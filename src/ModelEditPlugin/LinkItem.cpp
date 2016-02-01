@@ -71,6 +71,7 @@ public:
     Vector3 dragStartTranslation;
     //ModelEditDraggerPtr positionDragger;
     PositionDraggerPtr positionDragger;
+    Connection conSelectUpdate;
 
     LinkItemImpl(LinkItem* self);
     LinkItemImpl(LinkItem* self, Link* link);
@@ -210,7 +211,7 @@ void LinkItemImpl::init()
 
     self->sigUpdated().connect(boost::bind(&LinkItemImpl::onUpdated, this));
     self->sigPositionChanged().connect(boost::bind(&LinkItemImpl::onPositionChanged, this));
-    ItemTreeView::mainInstance()->sigSelectionChanged().connect(boost::bind(&LinkItemImpl::onSelectionChanged, this));
+    conSelectUpdate = ItemTreeView::mainInstance()->sigSelectionChanged().connect(boost::bind(&LinkItemImpl::onSelectionChanged, this));
     isselected = false;
 
     onUpdated();
@@ -327,6 +328,7 @@ LinkItem::~LinkItem()
 
 LinkItemImpl::~LinkItemImpl()
 {
+    conSelectUpdate.disconnect();
 }
 
 

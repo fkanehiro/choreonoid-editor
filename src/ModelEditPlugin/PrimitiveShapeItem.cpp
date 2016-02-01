@@ -68,6 +68,7 @@ public:
 
     //ModelEditDraggerPtr positionDragger;
     PositionDraggerPtr positionDragger;
+    Connection conSelectUpdate;
 
     PrimitiveShapeItemImpl(PrimitiveShapeItem* self);
     PrimitiveShapeItemImpl(PrimitiveShapeItem* self, Link* link);
@@ -209,7 +210,7 @@ void PrimitiveShapeItemImpl::init()
 
     self->sigUpdated().connect(boost::bind(&PrimitiveShapeItemImpl::onUpdated, this));
     self->sigPositionChanged().connect(boost::bind(&PrimitiveShapeItemImpl::onPositionChanged, this));
-    ItemTreeView::mainInstance()->sigSelectionChanged().connect(boost::bind(&PrimitiveShapeItemImpl::onSelectionChanged, this));
+    conSelectUpdate = ItemTreeView::mainInstance()->sigSelectionChanged().connect(boost::bind(&PrimitiveShapeItemImpl::onSelectionChanged, this));
     isselected = false;
 
     onUpdated();
@@ -275,6 +276,7 @@ PrimitiveShapeItem::~PrimitiveShapeItem()
 
 PrimitiveShapeItemImpl::~PrimitiveShapeItemImpl()
 {
+    conSelectUpdate.disconnect();
 }
 
 
