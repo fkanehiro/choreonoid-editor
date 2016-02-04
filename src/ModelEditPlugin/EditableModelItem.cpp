@@ -122,7 +122,7 @@ void EditableModelItem::initializeClass(ExtensionManager* ext)
     static bool initialized = false;
 
     if(!initialized){
-        ext->itemManager().registerClass<EditableModelItem>(N_("EditableModelItem"));
+        ext->itemManager().registerClass<EditableModelItem>(N_("EditableBodyItem"));
         ext->itemManager().addCreationPanel<EditableModelItem>();
         ext->itemManager().addLoader<EditableModelItem>(
             _("OpenHRP Model File for Editing"), "OpenHRP-VRML-MODEL", "wrl;dae;stl", boost::bind(loadEditableModelItem, _1, _2));
