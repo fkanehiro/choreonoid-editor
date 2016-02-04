@@ -120,7 +120,6 @@ PrimitiveShapeItemImpl::PrimitiveShapeItemImpl(PrimitiveShapeItem* self)
     : self(self)
 {
     link = new Link();
-    link->setName("Link");
     link->setShape(new SgPosTransform());
     init();
 }
@@ -204,7 +203,8 @@ void PrimitiveShapeItemImpl::init()
     self->rotation = link->rotation();
     sceneLink = new SgPosTransform();
     shape = NULL;
-    self->setName(link->name());
+    if (self->name().size() == 0)
+        self->setName(link->name());
 
     attachPositionDragger();
 
