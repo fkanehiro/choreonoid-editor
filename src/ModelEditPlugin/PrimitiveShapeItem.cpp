@@ -395,6 +395,11 @@ VRMLNodePtr PrimitiveShapeItemImpl::toVRML()
         sphere->radius = primitiveRadius;
         shape->geometry = sphere;
     }
+    VRMLMaterialPtr mat = new VRMLMaterial();
+    mat->diffuseColor = primitiveColor;
+    VRMLAppearancePtr app = new VRMLAppearance();
+    app->material = mat;
+    shape->appearance = app;
     return node;
 }
 
