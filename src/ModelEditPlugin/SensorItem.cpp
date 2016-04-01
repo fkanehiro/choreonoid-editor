@@ -25,6 +25,7 @@
 #include <cnoid/RangeSensor>
 #include <cnoid/VRMLBody>
 #include "ModelEditDragger.h"
+#include "JointItem.h"
 #include <cnoid/FileUtil>
 #include <cnoid/MeshNormalGenerator>
 #include <cnoid/MeshGenerator>
@@ -610,7 +611,7 @@ VRMLNodePtr SensorItem::toVRML()
 
 VRMLNodePtr SensorItemImpl::toVRML()
 {
-    VRMLNodePtr node = NULL;
+    VRMLTransformPtr node = NULL;
     string st(sensorType.selectedSymbol());
     if (st == "force") {
         VRMLForceSensorPtr fnode = new VRMLForceSensor();
@@ -643,6 +644,18 @@ VRMLNodePtr SensorItemImpl::toVRML()
         cnode->frontClipDistance = nearDistance;
         cnode->backClipDistance = farDistance;
         node = cnode;
+    }
+    if (node) {
+        node->defName = self->name();
+        JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
+        Affine3 parent, child, relative;
+        parent.translation() = parentjoint->translation;
+        parent.linear() = parentjoint->rotation;
+        child.translation() = self->translation;
+        child.linear() = self->rotation;
+        relative = parent.inverse() * child;
+        node->translation = relative.translation();
+        node->rotation = relative.rotation();
     }
     return node;
 }
