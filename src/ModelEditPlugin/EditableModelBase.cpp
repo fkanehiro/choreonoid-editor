@@ -22,7 +22,9 @@ namespace {
 const bool TRACE_FUNCTIONS = false;
 
 inline double radian(double deg) { return (3.14159265358979 * deg / 180.0); }
+}
 
+namespace cnoid{
 vector<double> readvector(const std::string& value)
 {
     double v;

@@ -17,6 +17,8 @@
 
 namespace cnoid {
 
+std::vector<double> readvector(const std::string& value);
+
 class CNOID_EXPORT EditableModelBase : public Item
 {
 public:
