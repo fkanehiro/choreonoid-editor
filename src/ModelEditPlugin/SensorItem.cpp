@@ -305,8 +305,8 @@ void SensorItemImpl::syncDevice()
         resolutionY = camera->resolutionY();
         frameRate = camera->frameRate();
         fieldOfView = camera->fieldOfView();
-        nearDistance = camera->nearDistance();
-        farDistance = camera->farDistance();
+        nearDistance = camera->nearClipDistance();
+        farDistance = camera->farClipDistance();
     }
     onUpdated();
 }
