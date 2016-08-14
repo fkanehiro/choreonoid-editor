@@ -89,9 +89,6 @@ public:
     void doPutProperties(PutPropertyFunction& putProperty);
     bool setCenterOfMass(const std::string& v);
     bool setInertia(const std::string& v);
-    bool setPrimitiveType(const std::string& t);
-    bool setBoxSize(const std::string& v);
-    bool setPrimitiveColor(const std::string& v);
     VRMLNodePtr toVRML();
     string toURDF();
     bool store(Archive& archive);
