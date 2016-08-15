@@ -410,33 +410,45 @@ void SensorItemImpl::onUpdated()
         material->setAmbientIntensity(0.0f);
         material->setTransparency(0.5f);
         
-        double d = 0.50;
         double w = 0.50;
         double h = 0.40;
         if (fieldOfView > 0.0 && resolutionX > 0.0 && resolutionY > 0.0) {
             double aspect = (double)resolutionX / (double)resolutionY;
             if (aspect >= 1.0) {
-                w = 2.0 * d * tan(fieldOfView / 2.0);
+                w = 2.0 * farDistance * tan(fieldOfView / 2.0);
                 h = w / aspect;
             } else {
-                h = 2.0 * d * tan(fieldOfView / 2.0);
+                h = 2.0 * farDistance * tan(fieldOfView / 2.0);
                 w = h * aspect;
             }
         }
         SgMeshPtr mesh = new SgMesh;
         SgVertexArray& vertices = *mesh->setVertices(new SgVertexArray());
-        vertices.reserve(5);
-        vertices.push_back(Vector3f(   0,    0,  0));
-        vertices.push_back(Vector3f(-w/2, -h/2, -d));
-        vertices.push_back(Vector3f(-w/2,  h/2, -d));
-        vertices.push_back(Vector3f( w/2,  h/2, -d));
-        vertices.push_back(Vector3f( w/2, -h/2, -d));
+        vertices.reserve(8);
+        vertices.push_back(Vector3f(-w/2, -h/2, -farDistance));
+        vertices.push_back(Vector3f(-w/2,  h/2, -farDistance));
+        vertices.push_back(Vector3f( w/2,  h/2, -farDistance));
+        vertices.push_back(Vector3f( w/2, -h/2, -farDistance));
+        w *= nearDistance/farDistance;
+        h *= nearDistance/farDistance;
+        vertices.push_back(Vector3f(-w/2, -h/2, -nearDistance));
+        vertices.push_back(Vector3f(-w/2,  h/2, -nearDistance));
+        vertices.push_back(Vector3f( w/2,  h/2, -nearDistance));
+        vertices.push_back(Vector3f( w/2, -h/2, -nearDistance));
         
-        mesh->reserveNumTriangles(4);
+        mesh->reserveNumTriangles(12);
         mesh->addTriangle(0,1,2);
         mesh->addTriangle(0,2,3);
         mesh->addTriangle(0,3,4);
+        mesh->addTriangle(4,3,7);
         mesh->addTriangle(0,4,1);
+        mesh->addTriangle(4,5,1);
+        mesh->addTriangle(1,5,6);
+        mesh->addTriangle(1,6,2);
+        mesh->addTriangle(6,7,3);
+        mesh->addTriangle(6,3,2);
+        mesh->addTriangle(5,4,7);
+        mesh->addTriangle(5,7,6);
 
         MeshNormalGenerator normalGenerator;
         normalGenerator.generateNormals(mesh, 0);
