@@ -467,18 +467,23 @@ void SensorItemImpl::onUpdated()
         material->setEmissiveColor(Vector3f::Zero());
         material->setAmbientIntensity(0.0f);
         material->setTransparency(0.5f);
-        
-        double d = 0.50;
-        double w = 2.0 * d * tan(scanAngle / 2.0);
+
+        const int ndiv = scanAngle/0.2+1;
         SgMeshPtr mesh = new SgMesh;
         SgVertexArray& vertices = *mesh->setVertices(new SgVertexArray());
-        vertices.reserve(3);
-        vertices.push_back(Vector3f(   0, 0,  0));
-        vertices.push_back(Vector3f(-w/2, 0, -d));
-        vertices.push_back(Vector3f( w/2, 0, -d));
+        vertices.reserve((ndiv+1)*2);
+        for (int i=0; i<=ndiv; i++){
+            double c = cos(scanAngle/ndiv*i-scanAngle/2);
+            double s = sin(scanAngle/ndiv*i-scanAngle/2);
+            vertices.push_back(Vector3f(minDistance*s, 0, -minDistance*c));
+            vertices.push_back(Vector3f(maxDistance*s, 0, -maxDistance*c));
+        }
         
-        mesh->reserveNumTriangles(1);
-        mesh->addTriangle(0,1,2);
+        mesh->reserveNumTriangles(ndiv*2);
+        for (int i=0; i<ndiv; i++){
+            mesh->addTriangle(i*2+2,i*2+1,i*2  );
+            mesh->addTriangle(i*2+2,i*2+3,i*2+1);
+        }
 
         MeshNormalGenerator normalGenerator;
         normalGenerator.generateNormals(mesh, 0);
