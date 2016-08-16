@@ -53,9 +53,6 @@ class PrimitiveShapeItemImpl
 public:
     PrimitiveShapeItem* self;
     Link* link;
-    double mass;
-    Vector3 centerOfMass;
-    Matrix3 momentsOfInertia;
     Selection primitiveType;
     Vector3f primitiveColor;
     Vector3 boxSize;
@@ -84,8 +81,6 @@ public:
     void onPositionChanged();
     void onSelectionChanged();
     void doPutProperties(PutPropertyFunction& putProperty);
-    bool setCenterOfMass(const std::string& v);
-    bool setInertia(const std::string& v);
     bool setPrimitiveType(const std::string& t);
     bool setBoxSize(const std::string& v);
     bool setPrimitiveColor(const std::string& v);
@@ -196,9 +191,6 @@ void PrimitiveShapeItemImpl::init()
     primitiveRadius = 0.1;
     primitiveHeight = 0.1;
 
-    mass = link->mass();
-    centerOfMass = link->centerOfMass();
-    momentsOfInertia = link->I();
     self->translation = link->offsetTranslation();
     self->rotation = link->offsetRotation();
     sceneLink = new SgPosTransform();
@@ -339,18 +331,10 @@ VRMLNodePtr PrimitiveShapeItem::toVRML()
 
 VRMLNodePtr PrimitiveShapeItemImpl::toVRML()
 {
-    VRMLSegmentPtr node;
-    node = new VRMLSegment();
-    node->mass = mass;
-    node->centerOfMass = centerOfMass;
-    MFFloat v(momentsOfInertia.data(), momentsOfInertia.data() + 9);
-    node->momentsOfInertia = v;
     VRMLTransformPtr trans;
     trans = new VRMLTransform();
-    node->defName = self->name();
     trans->translation = self->translation;
     trans->rotation = self->rotation;
-    node->children.push_back(trans);
     VRMLShapePtr shape;
     shape = new VRMLShape();
     trans->children.push_back(shape);
@@ -387,7 +371,7 @@ VRMLNodePtr PrimitiveShapeItemImpl::toVRML()
     VRMLAppearancePtr app = new VRMLAppearance();
     app->material = mat;
     shape->appearance = app;
-    return node;
+    return trans;
 }
 
 
@@ -400,16 +384,6 @@ string PrimitiveShapeItemImpl::toURDF()
 {
     ostringstream ss;
     ss << "<link name=\"" << self->name() << "\">" << endl;
-    ss << " <inertial>" << endl;
-    ss << "  <mass value=\"" << mass << "\"/>" << endl;
-    ss << "  <origin xyz=\"" << centerOfMass << "\" rpy=\"0 0 0\"/>" << endl;
-    ss << "  <inertia ixx=\"" << momentsOfInertia(0, 0)
-       << "\" ixy=" << momentsOfInertia(0, 1)
-       << "\" ixz=" << momentsOfInertia(0, 2)
-       << "\" iyy=" << momentsOfInertia(1, 1)
-       << "\" iyz=" << momentsOfInertia(1, 2)
-       << "\" izz=" << momentsOfInertia(2, 2) << "\" />" << endl;
-    ss << " </inertial>" << endl;
     Affine3 relative;
     JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
     if (parentjoint) {
@@ -478,13 +452,6 @@ void PrimitiveShapeItem::doPutProperties(PutPropertyFunction& putProperty)
 void PrimitiveShapeItemImpl::doPutProperties(PutPropertyFunction& putProperty)
 {
     ostringstream oss;
-    putProperty.decimals(4)(_("Mass"), mass, changeProperty(mass));
-    putProperty(_("Center of mass"), str(Vector3(centerOfMass)),
-                boost::bind(&PrimitiveShapeItemImpl::setCenterOfMass, this, _1));
-    oss.str("");
-    oss << momentsOfInertia;
-    putProperty(_("Inertia"), oss.str(),
-                boost::bind(&PrimitiveShapeItemImpl::setInertia, this, _1));
     putProperty(_("Primitive type"), primitiveType,
                 boost::bind(&Selection::selectIndex, &primitiveType, _1));
     string pt(primitiveType.selectedSymbol());
@@ -509,27 +476,6 @@ void PrimitiveShapeItemImpl::doPutProperties(PutPropertyFunction& putProperty)
                 boost::bind(&PrimitiveShapeItemImpl::setPrimitiveColor, this, _1));
 }
 
-
-bool PrimitiveShapeItemImpl::setCenterOfMass(const std::string& value)
-{
-    Vector3 p;
-    if(toVector3(value, p)){
-        centerOfMass = p;
-        return true;
-    }
-    return false;
-}
-
-
-bool PrimitiveShapeItemImpl::setInertia(const std::string& value)
-{
-    vector<double> v = readvector(value);
-    if (v.size() != 9) {
-        return false;
-    }
-    momentsOfInertia << v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8];
-    return true;
-}
 
 bool PrimitiveShapeItemImpl::setBoxSize(const std::string& value)
 {

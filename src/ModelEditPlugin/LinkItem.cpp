@@ -367,6 +367,12 @@ VRMLNodePtr LinkItemImpl::toVRML()
             trans->children = get<MFNode>(original->fields["children"]);
         }
     }
+    for(Item* child = self->childItem(); child; child = child->nextItem()){
+        EditableModelBase* item = dynamic_cast<EditableModelBase*>(child);
+        if (item){
+            node->children.push_back(item->toVRML());
+        }
+    }
     return node;
 }
 
