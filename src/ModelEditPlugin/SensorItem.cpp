@@ -665,6 +665,13 @@ VRMLNodePtr SensorItemImpl::toVRML()
         node->defName = self->name();
         node->translation = self->translation;
         node->rotation = self->rotation;
+        for(Item* child = self->childItem(); child; child = child->nextItem()){
+            EditableModelBase* item = dynamic_cast<EditableModelBase*>(child);
+            if (item) {
+                VRMLNodePtr childnode = item->toVRML();
+                node->children.push_back(childnode);
+            }
+        }
     }
     return node;
 }
