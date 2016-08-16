@@ -186,10 +186,6 @@ void LinkItemImpl::init()
     mass = link->mass();
     centerOfMass = link->Rs().transpose()*link->centerOfMass();
     momentsOfInertia = link->Rs().transpose()*link->I()*link->Rs();
-#if 0
-    self->translation = link->offsetTranslation();
-    self->rotation = link->offsetRotation();
-#endif
     sceneLink = new SceneLink(link);
     massShape = NULL;
     visualizeMass = false;
@@ -355,16 +351,11 @@ VRMLNodePtr LinkItemImpl::toVRML()
     node->centerOfMass = centerOfMass;
     MFFloat v(momentsOfInertia.data(), momentsOfInertia.data() + 9);
     node->momentsOfInertia = v;
-    VRMLTransformPtr trans;
-    trans = new VRMLTransform();
     node->defName = self->name();
-    trans->translation = self->translation;
-    trans->rotation = self->rotation;
-    node->children.push_back(trans);
     if (self->originalNode) {
         VRMLProtoInstancePtr original = dynamic_pointer_cast<VRMLProtoInstance>(self->originalNode);
         if (original) {
-            trans->children = get<MFNode>(original->fields["children"]);
+            node->children = get<MFNode>(original->fields["children"]);
         }
     }
     for(Item* child = self->childItem(); child; child = child->nextItem()){
@@ -446,7 +437,7 @@ SgNode* LinkItem::getScene()
 
 void LinkItem::doPutProperties(PutPropertyFunction& putProperty)
 {
-    EditableModelBase::doPutProperties(putProperty);
+    //EditableModelBase::doPutProperties(putProperty);
     impl->doPutProperties(putProperty);
 }
 
