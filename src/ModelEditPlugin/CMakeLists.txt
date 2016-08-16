@@ -10,6 +10,7 @@ set(sources
     EditableModelBase.cpp
     LinkItem.cpp
     PrimitiveShapeItem.cpp
+    MeshShapeItem.cpp
     JointItem.cpp
     SensorItem.cpp
   )
@@ -19,6 +20,7 @@ set(headers
   EditableModelBase.h
   LinkItem.h
   PrimitiveShapeItem.h
+  MeshShapeItem.h
   JointItem.h
   SensorItem.h
 )
