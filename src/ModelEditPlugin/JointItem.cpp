@@ -234,6 +234,7 @@ void JointItemImpl::init()
     setRadius(0.15);
 
     self->sigUpdated().connect(boost::bind(&JointItemImpl::onUpdated, this));
+    self->sigPositionChanged().connect(boost::bind(&JointItemImpl::onPositionChanged, this));
     conSelectUpdate = ItemTreeView::mainInstance()->sigSelectionChanged().connect(boost::bind(&JointItemImpl::onSelectionChanged, this));
     isselected = false;
 
@@ -443,6 +444,11 @@ bool JointItemImpl::setJointAxis(const std::string& value)
     return false;
 }
 
+
+void JointItemImpl::onPositionChanged()
+{
+    self->updatePosition();
+}
 
 VRMLNodePtr JointItem::toVRML()
 {
