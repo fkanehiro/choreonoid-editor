@@ -42,9 +42,12 @@ vector<double> readvector(const std::string& value)
 }
 
 EditableModelBase::EditableModelBase()
-    : translation(),
-      rotation()
-{}
+{
+    translation.setZero();
+    rotation.setIdentity();
+    absTranslation.setZero();
+    absRotation.setIdentity();
+}
 
 
 void EditableModelBase::doPutProperties(PutPropertyFunction& putProperty)
@@ -55,8 +58,8 @@ void EditableModelBase::doPutProperties(PutPropertyFunction& putProperty)
     SFRotation rotaxis;
     rotaxis = rotation;
     oss.str("");
-    oss << rotaxis.angle() << " " << str(rotaxis.axis());
-    putProperty(_("Rotation (Axis)"), oss.str(),
+    oss << str(rotaxis.axis())  << " " << rotaxis.angle();
+    putProperty(_("Rotation (AxisAngle)"), oss.str(),
                 boost::bind(&EditableModelBase::onRotationAxisChanged, this, _1));
     Vector3 rpy(rpyFromRot(rotation));
     putProperty("Rotation (RPY)", str(TO_DEGREE * rpy), boost::bind(&EditableModelBase::onRotationRPYChanged, this, _1));
@@ -67,11 +70,22 @@ void EditableModelBase::doPutProperties(PutPropertyFunction& putProperty)
 }
 
 
+void EditableModelBase::updateChildPositions()
+{
+    for(Item* child = childItem(); child; child = child->nextItem()){
+        EditableModelBase* item = dynamic_cast<EditableModelBase*>(child);
+        if (item){
+            item->updatePosition();
+        }
+    }
+}
+
 bool EditableModelBase::onTranslationChanged(const std::string& value)
 {
     Vector3 p;
     if(toVector3(value, p)){
         translation = p;
+        updatePosition();
         return true;
     }
     return false;
@@ -85,6 +99,7 @@ bool EditableModelBase::onRotationChanged(const std::string& value)
         return false;
     }
     rotation << v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8];
+    updatePosition();
     return true;
 }
 
@@ -109,6 +124,7 @@ bool EditableModelBase::onRotationAxisChanged(const std::string& value)
     axis /= size; // normalize
     
     rotation = rot.toRotationMatrix();
+    updatePosition();
     return true;
 }
 
@@ -118,7 +134,23 @@ bool EditableModelBase::onRotationRPYChanged(const std::string& value)
     Vector3 rpy;
     if(toVector3(value, rpy)){
         rotation = rotFromRpy(TO_RADIAN * rpy);
+        updatePosition();
         return true;
     }
     return false;
+}
+
+void EditableModelBase::updatePosition()
+{
+    EditableModelBase *parent;
+    parent = dynamic_cast<EditableModelBase*>(parentItem());
+    if (parent){
+        absTranslation = parent->absRotation*translation + parent->absTranslation;
+        absRotation = parent->absRotation*rotation;
+    }else{
+        absTranslation = translation;
+        absRotation = rotation;
+    }
+    updateChildPositions();
+    notifyUpdate();
 }

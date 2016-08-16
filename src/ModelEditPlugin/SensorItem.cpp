@@ -59,6 +59,7 @@ class SensorItemImpl
 public:
     SensorItem* self;
     Device* device;
+    int sensorId;
     Selection sensorType;
     Selection cameraType;
     int resolutionX;
@@ -152,10 +153,13 @@ SensorItemImpl::SensorItemImpl(SensorItem* self, Device* dev)
     : self(self)
 {
     this->device = dev;
-    self->setName(dev->name());
-    Affine3 position = dev->link()->position() * dev->T_local();
-    self->translation = position.translation();
-    self->rotation = position.rotation();
+    if (dev->name() == ""){
+        self->setName("noname");
+    }else{
+        self->setName(dev->name());
+    }
+    self->translation = dev->link()->Rs().transpose()*dev->T_local().translation();
+    self->rotation = dev->link()->Rs().transpose()*dev->T_local().rotation();
     init();
     syncDevice();
 }
@@ -179,6 +183,8 @@ SensorItemImpl::SensorItemImpl(SensorItem* self, const SensorItemImpl& org)
 
 void SensorItemImpl::init()
 {
+    sensorId = device->id();
+
     sensorType.resize(2);
     sensorType.setSymbol(0, "camera");
     sensorType.setSymbol(1, "range");
@@ -392,8 +398,8 @@ Device* SensorItem::device() const
 
 void SensorItemImpl::onUpdated()
 {
-    sceneLink->translation() = self->translation;
-    sceneLink->rotation() = self->rotation;
+    sceneLink->translation() = self->absTranslation;
+    sceneLink->rotation() = self->absRotation;
 
     // draw shape indicator for sensors
     if (sensorShape) {
@@ -531,6 +537,7 @@ SgNode* SensorItem::getScene()
 
 void SensorItem::doPutProperties(PutPropertyFunction& putProperty)
 {
+    EditableModelBase::doPutProperties(putProperty);
     impl->doPutProperties(putProperty);
 }
 
@@ -538,20 +545,7 @@ void SensorItem::doPutProperties(PutPropertyFunction& putProperty)
 void SensorItemImpl::doPutProperties(PutPropertyFunction& putProperty)
 {
     ostringstream oss;
-    putProperty(_("Translation"), str(Vector3(sceneLink->translation())),
-                boost::bind(&SensorItem::onTranslationChanged, self, _1));
-    SFRotation rotation;
-    rotation = sceneLink->rotation();
-    oss.str("");
-    oss << rotation.angle() << " " << str(rotation.axis());
-    putProperty(_("Rotation (Axis)"), oss.str(),
-                boost::bind(&SensorItem::onRotationAxisChanged, self, _1));
-    Vector3 rpy(rpyFromRot(sceneLink->rotation()));
-    putProperty("Rotation (RPY)", str(TO_DEGREE * rpy), boost::bind(&SensorItem::onRotationRPYChanged, self, _1));
-    oss.str("");
-    oss << sceneLink->rotation();
-    putProperty(_("Rotation (Matrix)"), oss.str(),
-                boost::bind(&SensorItem::onRotationChanged, self, _1));
+    putProperty.decimals(4)(_("Sensor ID"), sensorId, changeProperty(sensorId));
     putProperty(_("Sensor type"), sensorType,
                 boost::bind(&Selection::selectIndex, &sensorType, _1));
     string st(sensorType.selectedSymbol());
@@ -632,19 +626,23 @@ VRMLNodePtr SensorItemImpl::toVRML()
     string st(sensorType.selectedSymbol());
     if (st == "force") {
         VRMLForceSensorPtr fnode = new VRMLForceSensor();
+        fnode->sensorId = sensorId;
         fnode->maxForce = maxForce;
         fnode->maxTorque = maxTorque;
         node = fnode;
     } else if (st == "gyro") {
         VRMLGyroPtr gnode = new VRMLGyro();
+        gnode->sensorId = sensorId;
         gnode->maxAngularVelocity = maxAngularVelocity;
         node = gnode;
     } else if (st == "acceleration") {
         VRMLAccelerationSensorPtr anode = new VRMLAccelerationSensor();
+        anode->sensorId = sensorId;
         anode->maxAcceleration = maxAcceleration;
         node = anode;
     } else if (st == "range") {
         VRMLRangeSensorPtr rnode = new VRMLRangeSensor();
+        rnode->sensorId = sensorId;
         rnode->scanAngle = scanAngle;
         rnode->scanStep = scanStep;
         rnode->scanRate = scanRate;
@@ -653,6 +651,7 @@ VRMLNodePtr SensorItemImpl::toVRML()
         node = rnode;
     } else if (st == "camera") {
         VRMLVisionSensorPtr cnode = new VRMLVisionSensor();
+        cnode->sensorId = sensorId;
         cnode->type = cameraType.selectedSymbol();
         cnode->width = resolutionX;
         cnode->height = resolutionY;
@@ -664,15 +663,8 @@ VRMLNodePtr SensorItemImpl::toVRML()
     }
     if (node) {
         node->defName = self->name();
-        JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
-        Affine3 parent, child, relative;
-        parent.translation() = parentjoint->translation;
-        parent.linear() = parentjoint->rotation;
-        child.translation() = self->translation;
-        child.linear() = self->rotation;
-        relative = parent.inverse() * child;
-        node->translation = relative.translation();
-        node->rotation = relative.rotation();
+        node->translation = self->translation;
+        node->rotation = self->rotation;
     }
     return node;
 }

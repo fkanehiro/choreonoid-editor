@@ -24,8 +24,8 @@ class CNOID_EXPORT EditableModelBase : public Item
 public:
     EditableModelBase();
     VRMLNodePtr originalNode;
-    Vector3 translation;
-    Matrix3 rotation;
+    Vector3 translation, absTranslation;
+    Matrix3 rotation, absRotation;
     virtual VRMLNodePtr toVRML() {};
     virtual std::string toURDF() {};
     bool onTranslationChanged(const std::string& value);
@@ -33,6 +33,8 @@ public:
     bool onRotationAxisChanged(const std::string& value);
     bool onRotationRPYChanged(const std::string& value);
     void doPutProperties(PutPropertyFunction& putProperty);
+    void updateChildPositions();
+    void updatePosition();
 };
 
 }

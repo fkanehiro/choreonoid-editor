@@ -184,10 +184,12 @@ void LinkItemImpl::doAssign(Item* srcItem)
 void LinkItemImpl::init()
 {
     mass = link->mass();
-    centerOfMass = link->centerOfMass();
-    momentsOfInertia = link->I();
-    self->translation = link->translation();
-    self->rotation = link->rotation();
+    centerOfMass = link->Rs().transpose()*link->centerOfMass();
+    momentsOfInertia = link->Rs().transpose()*link->I()*link->Rs();
+#if 0
+    self->translation = link->offsetTranslation();
+    self->rotation = link->offsetRotation();
+#endif
     sceneLink = new SceneLink(link);
     massShape = NULL;
     visualizeMass = false;
@@ -269,8 +271,8 @@ void LinkItemImpl::onDraggerDragged()
 
 void LinkItemImpl::onUpdated()
 {
-    sceneLink->translation() = self->translation;
-    sceneLink->rotation() = self->rotation;
+    sceneLink->translation() = self->absTranslation;
+    sceneLink->rotation() = self->absRotation;
     
     // draw shape indicator for mass
     if (massShape) {
@@ -355,22 +357,9 @@ VRMLNodePtr LinkItemImpl::toVRML()
     node->momentsOfInertia = v;
     VRMLTransformPtr trans;
     trans = new VRMLTransform();
-    JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
-    if (parentjoint) {
-        node->defName = self->name();
-        Affine3 parent, child, relative;
-        parent.translation() = parentjoint->translation;
-        parent.linear() = parentjoint->rotation;
-        child.translation() = self->translation;
-        child.linear() = self->rotation;
-        relative = parent.inverse() * child;
-        trans->translation = relative.translation();
-        trans->rotation = relative.rotation();
-    } else {
-        node->defName = self->name();
-        trans->translation = self->translation;
-        trans->rotation = self->rotation;
-    }
+    node->defName = self->name();
+    trans->translation = self->translation;
+    trans->rotation = self->rotation;
     node->children.push_back(trans);
     if (self->originalNode) {
         VRMLProtoInstancePtr original = dynamic_pointer_cast<VRMLProtoInstance>(self->originalNode);

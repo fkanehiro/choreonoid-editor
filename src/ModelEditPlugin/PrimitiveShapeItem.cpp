@@ -199,8 +199,8 @@ void PrimitiveShapeItemImpl::init()
     mass = link->mass();
     centerOfMass = link->centerOfMass();
     momentsOfInertia = link->I();
-    self->translation = link->translation();
-    self->rotation = link->rotation();
+    self->translation = link->offsetTranslation();
+    self->rotation = link->offsetRotation();
     sceneLink = new SgPosTransform();
     shape = NULL;
     if (self->name().size() == 0)
@@ -288,8 +288,8 @@ Link* PrimitiveShapeItem::link() const
 
 void PrimitiveShapeItemImpl::onUpdated()
 {
-    sceneLink->translation() = self->translation;
-    sceneLink->rotation() = self->rotation;
+    sceneLink->translation() = self->absTranslation;
+    sceneLink->rotation() = self->absRotation;
     string pt(primitiveType.selectedSymbol());
     if (shape) {
         sceneLink->removeChild(shape);

@@ -173,7 +173,7 @@ void JointItemImpl::init()
 
     jointId = link->jointId();
     jointType.selectIndex(link->jointType());
-    jointAxis = link->jointAxis();
+    jointAxis = link->Rs().transpose()*link->jointAxis();
     ulimit = link->q_upper();
     llimit = link->q_lower();
     uvlimit = link->dq_upper();
@@ -186,8 +186,8 @@ void JointItemImpl::init()
     torqueConst = node->torqueConst;
     encoderPulse = node->encoderPulse;
     
-    self->translation = link->translation();
-    self->rotation = link->rotation();
+    self->translation = link->b();
+    self->rotation = link->Rs();
     sceneLink = new SceneLink(new Link());
 
     if (self->name().size() == 0)
@@ -317,11 +317,10 @@ void JointItemImpl::onDraggerDragged()
     self->notifyUpdate();
 }
 
-
 void JointItemImpl::onUpdated()
 {
-    sceneLink->translation() = self->translation;
-    sceneLink->rotation() = self->rotation;
+    sceneLink->translation() = self->absTranslation;
+    sceneLink->rotation() = self->absRotation;
 
     // draw shape indicator for joint axis
     if (axisShape) {
@@ -342,18 +341,13 @@ void JointItemImpl::onUpdated()
         shape->setMesh(mesh);
         shape->setMaterial(material);
         axisShape->addChild(shape);
-        if (jointAxis[0] == 1 && jointAxis[1] == 0 && jointAxis[2] == 0) {
-            axisShape->setRotation(AngleAxis( PI / 2.0, Vector3::UnitY()));
-        }
-        if (jointAxis[0] == 0 && jointAxis[1] == 1 && jointAxis[2] == 0) {
-            axisShape->setRotation(AngleAxis( PI / 2.0, Vector3::UnitX()));
-        }
-        if (jointAxis[0] == 0 && jointAxis[1] == 0 && jointAxis[2] == 1) {
-            axisShape->setRotation(AngleAxis(-PI / 2.0, Vector3::UnitZ()));
-        }
+        Vector3 axis = jointAxis.cross(Vector3::UnitZ());
+        double th = asin(axis.norm());
+        axisShape->setRotation(AngleAxis(th, axis));
         sceneLink->addChildOnce(axisShape);
     }
     sceneLink->notifyUpdate();
+
 }
 
 
@@ -476,20 +470,8 @@ VRMLNodePtr JointItemImpl::toVRML()
     node->rotorResistor = rotorResistor;
     node->torqueConst = torqueConst;
     node->encoderPulse = encoderPulse;
-    JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
-    if (parentjoint) {
-        Affine3 parent, child, relative;
-        parent.translation() = parentjoint->translation;
-        parent.linear() = parentjoint->rotation;
-        child.translation() = self->translation;
-        child.linear() = self->rotation;
-        relative = parent.inverse() * child;
-        node->translation = relative.translation();
-        node->rotation = relative.rotation();
-    } else {
-        node->translation = self->translation;
-        node->rotation = self->rotation;
-    }
+    node->translation = self->translation;
+    node->rotation = self->rotation;
     for(Item* child = self->childItem(); child; child = child->nextItem()){
         EditableModelBase* item = dynamic_cast<EditableModelBase*>(child);
         if (item) {

@@ -264,6 +264,8 @@ bool EditableModelItemImpl::loadModelFile(const std::string& filename)
                 ItemTreeView::instance()->checkItem(sitem, true);
             }
         }
+        JointItem *rootJoint = dynamic_cast<JointItem*>(self->childItem());
+        if (rootJoint) rootJoint->updatePosition();
     }
 
     return (newBody);
