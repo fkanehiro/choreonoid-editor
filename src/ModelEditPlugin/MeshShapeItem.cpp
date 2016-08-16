@@ -52,18 +52,17 @@ class MeshShapeItemImpl
 {
 public:
     MeshShapeItem* self;
-    Link* link;
+    std::string path;
     bool isselected;
 
     SgPosTransform* sceneLink;
-    SgShape* shape;
+    SgNode* shape;
 
     //ModelEditDraggerPtr positionDragger;
     PositionDraggerPtr positionDragger;
     Connection conSelectUpdate;
 
     MeshShapeItemImpl(MeshShapeItem* self);
-    MeshShapeItemImpl(MeshShapeItem* self, Link* link);
     MeshShapeItemImpl(MeshShapeItem* self, const MeshShapeItemImpl& org);
     ~MeshShapeItemImpl();
     void doAssign(Item* srcItem);
@@ -106,24 +105,9 @@ MeshShapeItem::MeshShapeItem()
 MeshShapeItemImpl::MeshShapeItemImpl(MeshShapeItem* self)
     : self(self)
 {
-    link = new Link();
-    link->setShape(new SgPosTransform());
     init();
 }
 
-
-MeshShapeItem::MeshShapeItem(Link* link)
-{
-    impl = new MeshShapeItemImpl(this, link);
-}
-    
-
-MeshShapeItemImpl::MeshShapeItemImpl(MeshShapeItem* self, Link* link)
-{
-    this->link = link;
-    init();
-}
-    
 
 MeshShapeItem::MeshShapeItem(const MeshShapeItem& org)
     : EditableModelBase(org)
@@ -135,7 +119,6 @@ MeshShapeItem::MeshShapeItem(const MeshShapeItem& org)
 MeshShapeItemImpl::MeshShapeItemImpl(MeshShapeItem* self, const MeshShapeItemImpl& org)
     : self(self)
 {
-    link = org.link;
     init();
 }
 
@@ -168,12 +151,8 @@ void MeshShapeItemImpl::doAssign(Item* srcItem)
 
 void MeshShapeItemImpl::init()
 {
-    self->translation = link->offsetTranslation();
-    self->rotation = link->offsetRotation();
     sceneLink = new SgPosTransform();
     shape = NULL;
-    if (self->name().size() == 0)
-        self->setName(link->name());
 
     attachPositionDragger();
 
@@ -249,16 +228,19 @@ MeshShapeItemImpl::~MeshShapeItemImpl()
 }
 
 
-Link* MeshShapeItem::link() const
-{
-    return impl->link;
-}
-
-
 void MeshShapeItemImpl::onUpdated()
 {
     sceneLink->translation() = self->absTranslation;
     sceneLink->rotation() = self->absRotation;
+    if (shape) {
+        sceneLink->removeChild(shape);
+        shape = NULL;
+    }
+    BodyLoader bodyLoader;
+    BodyPtr newBody = bodyLoader.load(path);
+    if (!newBody) return;
+    shape = newBody->rootLink()->visualShape();
+    sceneLink->addChildOnce(shape);
     sceneLink->notifyUpdate();
 }
 
@@ -279,6 +261,10 @@ VRMLNodePtr MeshShapeItemImpl::toVRML()
     trans = new VRMLTransform();
     trans->translation = self->translation;
     trans->rotation = self->rotation;
+    VRMLInlinePtr inlineNode;
+    inlineNode = new VRMLInline();
+    inlineNode->urls.push_back(path);
+    trans->children.push_back(inlineNode);
     return trans;
 }
 
@@ -336,7 +322,7 @@ void MeshShapeItem::doPutProperties(PutPropertyFunction& putProperty)
 
 void MeshShapeItemImpl::doPutProperties(PutPropertyFunction& putProperty)
 {
-    ostringstream oss;
+    putProperty(_("Path"), path, changeProperty(path));
 }
 
 

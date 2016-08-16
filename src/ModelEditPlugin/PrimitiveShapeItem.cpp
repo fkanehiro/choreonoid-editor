@@ -52,7 +52,6 @@ class PrimitiveShapeItemImpl
 {
 public:
     PrimitiveShapeItem* self;
-    Link* link;
     Selection primitiveType;
     Vector3f primitiveColor;
     Vector3 boxSize;
@@ -68,7 +67,6 @@ public:
     Connection conSelectUpdate;
 
     PrimitiveShapeItemImpl(PrimitiveShapeItem* self);
-    PrimitiveShapeItemImpl(PrimitiveShapeItem* self, Link* link);
     PrimitiveShapeItemImpl(PrimitiveShapeItem* self, const PrimitiveShapeItemImpl& org);
     ~PrimitiveShapeItemImpl();
     void doAssign(Item* srcItem);
@@ -114,24 +112,9 @@ PrimitiveShapeItem::PrimitiveShapeItem()
 PrimitiveShapeItemImpl::PrimitiveShapeItemImpl(PrimitiveShapeItem* self)
     : self(self)
 {
-    link = new Link();
-    link->setShape(new SgPosTransform());
     init();
 }
 
-
-PrimitiveShapeItem::PrimitiveShapeItem(Link* link)
-{
-    impl = new PrimitiveShapeItemImpl(this, link);
-}
-    
-
-PrimitiveShapeItemImpl::PrimitiveShapeItemImpl(PrimitiveShapeItem* self, Link* link)
-{
-    this->link = link;
-    init();
-}
-    
 
 PrimitiveShapeItem::PrimitiveShapeItem(const PrimitiveShapeItem& org)
     : EditableModelBase(org)
@@ -143,7 +126,6 @@ PrimitiveShapeItem::PrimitiveShapeItem(const PrimitiveShapeItem& org)
 PrimitiveShapeItemImpl::PrimitiveShapeItemImpl(PrimitiveShapeItem* self, const PrimitiveShapeItemImpl& org)
     : self(self)
 {
-    link = org.link;
     init();
 }
 
@@ -191,12 +173,8 @@ void PrimitiveShapeItemImpl::init()
     primitiveRadius = 0.1;
     primitiveHeight = 0.1;
 
-    self->translation = link->offsetTranslation();
-    self->rotation = link->offsetRotation();
     sceneLink = new SgPosTransform();
     shape = NULL;
-    if (self->name().size() == 0)
-        self->setName(link->name());
 
     attachPositionDragger();
 
@@ -269,12 +247,6 @@ PrimitiveShapeItem::~PrimitiveShapeItem()
 PrimitiveShapeItemImpl::~PrimitiveShapeItemImpl()
 {
     conSelectUpdate.disconnect();
-}
-
-
-Link* PrimitiveShapeItem::link() const
-{
-    return impl->link;
 }
 
 

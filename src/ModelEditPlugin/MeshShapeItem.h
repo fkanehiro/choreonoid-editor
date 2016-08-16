@@ -27,11 +27,9 @@ public:
     static void initializeClass(ExtensionManager* ext);
         
     MeshShapeItem();
-    MeshShapeItem(Link* link);
     MeshShapeItem(const MeshShapeItem& org);
     virtual ~MeshShapeItem();
 
-    Link* link() const;
     VRMLNodePtr toVRML();
     std::string toURDF();
 

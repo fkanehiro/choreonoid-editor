@@ -27,11 +27,9 @@ public:
     static void initializeClass(ExtensionManager* ext);
         
     PrimitiveShapeItem();
-    PrimitiveShapeItem(Link* link);
     PrimitiveShapeItem(const PrimitiveShapeItem& org);
     virtual ~PrimitiveShapeItem();
 
-    Link* link() const;
     VRMLNodePtr toVRML();
     std::string toURDF();
 
