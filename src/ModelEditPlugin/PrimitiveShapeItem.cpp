@@ -347,22 +347,9 @@ VRMLNodePtr PrimitiveShapeItemImpl::toVRML()
     node->momentsOfInertia = v;
     VRMLTransformPtr trans;
     trans = new VRMLTransform();
-    JointItem* parentjoint = dynamic_cast<JointItem*>(self->parentItem());
-    if (parentjoint) {
-        node->defName = parentjoint->name() + "_LINK";
-        Affine3 parent, child, relative;
-        parent.translation() = parentjoint->translation;
-        parent.linear() = parentjoint->rotation;
-        child.translation() = self->translation;
-        child.linear() = self->rotation;
-        relative = parent.inverse() * child;
-        trans->translation = relative.translation();
-        trans->rotation = relative.rotation();
-    } else {
-        node->defName = self->name();
-        trans->translation = self->translation;
-        trans->rotation = self->rotation;
-    }
+    node->defName = self->name();
+    trans->translation = self->translation;
+    trans->rotation = self->rotation;
     node->children.push_back(trans);
     VRMLShapePtr shape;
     shape = new VRMLShape();
