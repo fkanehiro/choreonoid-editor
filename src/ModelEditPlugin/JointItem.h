@@ -6,15 +6,12 @@
 #define CNOID_EDITMODEL_PLUGIN_JOINT_ITEM_H
 
 #include <cnoid/Item>
-#include <cnoid/Body>
-#include <cnoid/Link>
-#include <cnoid/SceneProvider>
 #include <cnoid/VRML>
-#include <boost/optional.hpp>
 #include "EditableModelBase.h"
 #include "exportdecl.h"
 
 namespace cnoid {
+class Link;
 
 class JointItem;
 typedef ref_ptr<JointItem> JointItemPtr;

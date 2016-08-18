@@ -7,6 +7,8 @@
 #include "JointItem.h"
 #include "LinkItem.h"
 #include "SensorItem.h"
+#include "PrimitiveShapeItem.h"
+#include "MeshShapeItem.h"
 #include <cnoid/YAMLReader>
 #include <cnoid/EigenArchive>
 #include <cnoid/Archive>
@@ -34,6 +36,7 @@
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/variant.hpp>
 #include <bitset>
 #include <deque>
 #include <iostream>
@@ -179,25 +182,184 @@ void EditableModelItemImpl::setLinkTree(Link* link, VRMLBodyLoader* vloader)
     self->notifyUpdate();
 }
 
+void showSgNodeTree(SgNode *node, int indent)
+{
+    SgGroup *group = dynamic_cast<SgGroup *>(node);
+    for (int i=0; i<indent; i++) std::cout << " ";
+    if (group) {
+        if (dynamic_cast<SgPosTransform*>(node)){
+            std::cout << "SgPosTransform" << std::endl;
+        }else{
+            std::cout << "SgGroup" << std::endl;
+        }
+        for (int i=0; i<group->numChildren(); i++){
+            showSgNodeTree(group->child(i), indent+2);
+        }
+    }else if(dynamic_cast<SgShape *>(node)){
+        std::cout << "SgShape" << std::endl;
+    }else{
+        std::cout << "SgNode" << std::endl;
+    }
+}
+
+void showVRMLNodeTree(VRMLNode *node, int indent=0)
+{
+    for (int i=0; i<indent; i++) std::cout << " ";
+
+    VRMLInline *inlineNode = dynamic_cast<VRMLInline *>(node);
+    if (inlineNode){
+        std::cout << "VRMLInline" << std::endl;
+        return;
+    }
+
+    VRMLProtoInstance *proto = dynamic_cast<VRMLProtoInstance *>(node);
+    if (proto){
+        std::cout << "VRMLProtoInstance(" << proto->proto->protoName << ")" << std::endl;
+        if (proto->proto->protoName != "Segment") return;
+        MFNode children = boost::get<MFNode>(proto->fields["children"]);
+        for (unsigned int i=0; i<children.size(); i++){
+            showVRMLNodeTree(children[i].get(), indent+2);
+        }
+        return;
+    }
+
+    VRMLTransform *trans = dynamic_cast<VRMLTransform *>(node);
+    if (trans){
+        std::cout << "VRMLTransform" << std::endl;
+        for (int i=0; i<trans->countChildren(); i++){
+            showVRMLNodeTree(trans->getChild(i), indent+2);
+        }
+        return;
+    }
+
+    VRMLGroup *group = dynamic_cast<VRMLGroup *>(node);
+    if (group){
+        std::cout << "VRMLGroup" << std::endl;
+        for (int i=0; i<group->countChildren(); i++){
+            showVRMLNodeTree(group->getChild(i), indent+2);
+        }
+        return;
+    }
+
+    VRMLShape *shape = dynamic_cast<VRMLShape *>(node);
+    if (shape){
+        std::cout << "VRMLShape" << std::endl;
+        return;
+    }
+
+    std::cout << "VRMLNode" << std::endl;
+}
+
+void createShapeItems(LinkItem *linkItem, SgNode *snode, VRMLNode *vnode,
+                      Vector3 translation, Matrix3 rotation)
+{
+    VRMLInline *inlineNode = dynamic_cast<VRMLInline *>(vnode);
+    if (inlineNode){
+        //std::cout << "VRMLInline" << std::endl;
+        MeshShapeItemPtr mesh
+            = new MeshShapeItem(translation, rotation, snode, inlineNode->urls[0]);
+        linkItem->addChildItem(mesh);
+        return;
+    }
+
+    VRMLProtoInstance *proto = dynamic_cast<VRMLProtoInstance *>(vnode);
+    if (proto){
+        //std::cout << "VRMLProtoInstance" << std::endl;
+        if (proto->proto->protoName != "Segment") return;
+        //std::cout << "VRMLSegment" << std::endl;
+        MFNode children = boost::get<MFNode>(proto->fields["children"]);
+        SgGroup *group = dynamic_cast<SgGroup *>(snode);
+        if (!group){
+            std::cerr << "error(1) in createShapeItems" << std::endl;
+        }
+        if (group->numChildren()!=1) {
+            std::cerr << "error(2) in createShapeItems" << std::endl;
+        }
+        SgPosTransform *strans = dynamic_cast<SgPosTransform *>(group->child(0));
+        if (strans){ // This means link->Rs() is not identity matrix
+            translation = rotation*strans->translation() + translation;
+            rotation = rotation*strans->rotation();
+            if (strans->numChildren() != 1){
+                std::cerr << "error(7) in createShapeItems" << std::endl;
+            }
+            group = strans;
+        }
+        group = dynamic_cast<SgGroup *>(group->child(0));
+        if (!group){
+            std::cerr << "error(3) in createShapeItems" << std::endl;
+        }
+        if (group->numChildren() != children.size()){
+            std::cerr << "error(6) in createShapeItems" << std::endl;
+        }
+        for (unsigned int i=0; i<children.size(); i++){
+            createShapeItems(linkItem, group->child(i), children[i].get(), translation, rotation);
+        }
+        return;
+    }
+
+    VRMLTransform *vtrans = dynamic_cast<VRMLTransform *>(vnode);
+    if (vtrans){
+        //std::cout << "VRMLTransform" << std::endl;
+        SgPosTransform *strans = dynamic_cast<SgPosTransform *>(snode);
+        if (!strans){
+            std::cerr << "error(4) in createShapeItems" << std::endl;
+        }
+        if (vtrans->countChildren() != strans->numChildren()){
+            std::cerr << "error(5) in createShapeItems" << std::endl;
+        }
+        translation = rotation*strans->translation() + translation;
+        rotation = rotation*strans->rotation();
+        for (int i=0; i<vtrans->countChildren(); i++){
+            createShapeItems(linkItem, strans->child(i), vtrans->getChild(i),
+                             translation, rotation);
+        }
+        return;
+    }
+
+    VRMLShape *vshape = dynamic_cast<VRMLShape *>(vnode);
+    if (vshape){
+        //std::cout << "VRMLShape" << std::endl;
+        SgShape *sshape = dynamic_cast<SgShape *>(snode);
+        if (!sshape){
+            std::cerr << "error in createShapeItems" << std::endl;
+        }
+        SgMesh *mesh = sshape->mesh();
+        if (mesh->primitiveType() != SgMesh::MESH){
+            PrimitiveShapeItemPtr primitive
+                = new PrimitiveShapeItem(translation, rotation, sshape);
+            linkItem->addChildItem(primitive);
+        }
+        return;
+    }
+}
 
 void EditableModelItemImpl::setLinkTreeSub(Link* link, VRMLBodyLoader* vloader, Item* parentItem)
 {
     // first, create joint item
     JointItemPtr item = new JointItem(link);
-    item->originalNode = vloader->getOriginalNode(link);
+    //item->originalNode = vloader->getOriginalNode(link);
     parentItem->addChildItem(item);
     ItemTreeView::instance()->checkItem(item, true);
+    SgNode* visualShape = link->visualShape();
+    link->setVisualShape(NULL);
     // next, create link item under the joint item
     LinkItemPtr litem = new LinkItem(link);
-    litem->originalNode = vloader->getOriginalNode(link);
+    //litem->originalNode = vloader->getOriginalNode(link);
     item->addChildItem(litem);
     SgNode* collisionShape = link->collisionShape();
-    if (collisionShape != link->visualShape()) {
+    if (collisionShape != visualShape) {
         LinkItemPtr citem = new LinkItem(link);
-        citem->originalNode = vloader->getOriginalNode(link);
+        //citem->originalNode = vloader->getOriginalNode(link);
         citem->setName("collision");
         litem->addChildItem(citem);
     }
+#if 0
+    std::cout << link->name() << std::endl;
+    showVRMLNodeTree(vloader->getOriginalNode(link).get());
+    showSgNodeTree(visualShape,0);
+#endif
+    createShapeItems(litem, visualShape, vloader->getOriginalNode(link).get(),
+                     Vector3::Zero(), link->Rs().transpose());
     ItemTreeView::instance()->checkItem(litem, true);
 
     if(link->child()){

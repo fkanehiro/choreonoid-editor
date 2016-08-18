@@ -67,6 +67,7 @@ public:
     Connection conSelectUpdate;
 
     PrimitiveShapeItemImpl(PrimitiveShapeItem* self);
+    PrimitiveShapeItemImpl(PrimitiveShapeItem* self, SgShape *shape);
     PrimitiveShapeItemImpl(PrimitiveShapeItem* self, const PrimitiveShapeItemImpl& org);
     ~PrimitiveShapeItemImpl();
     void doAssign(Item* srcItem);
@@ -108,9 +109,24 @@ PrimitiveShapeItem::PrimitiveShapeItem()
     impl = new PrimitiveShapeItemImpl(this);
 }
 
+PrimitiveShapeItem::PrimitiveShapeItem(const Vector3& translation_, const Matrix3& rotation_,
+                                       SgShape *shape)
+{
+    translation = translation_;
+    rotation = rotation_;
+    impl = new PrimitiveShapeItemImpl(this, shape);
+}
 
 PrimitiveShapeItemImpl::PrimitiveShapeItemImpl(PrimitiveShapeItem* self)
-    : self(self)
+    : self(self), shape(NULL)
+{
+    init();
+}
+
+
+PrimitiveShapeItemImpl::PrimitiveShapeItemImpl(PrimitiveShapeItem* self,
+                                               SgShape *shape_)
+    : self(self), shape(shape_)
 {
     init();
 }
@@ -163,6 +179,7 @@ void PrimitiveShapeItemImpl::init()
     primitiveType.setSymbol(1, "Sphere");
     primitiveType.setSymbol(2, "Cylinder");
     primitiveType.setSymbol(3, "Cone");
+    primitiveType.setSymbol(4, "Mesh");
     primitiveType.select("Box");
     primitiveColor[0] = 0.5f;
     primitiveColor[1] = 0.5f;
@@ -174,7 +191,44 @@ void PrimitiveShapeItemImpl::init()
     primitiveHeight = 0.1;
 
     sceneLink = new SgPosTransform();
-    shape = NULL;
+    if (shape){
+        SgMesh *mesh = shape->mesh();
+        switch(mesh->primitiveType()){
+        case SgMesh::BOX:
+            {
+                primitiveType.select("Box");
+                const SgMesh::Box& params = mesh->primitive<SgMesh::Box>();
+                boxSize = params.size;
+            }
+            break;
+        case SgMesh::SPHERE:
+            {
+                primitiveType.select("Sphere");
+                const SgMesh::Sphere& params = mesh->primitive<SgMesh::Sphere>();
+                primitiveRadius = params.radius;
+            }
+            break;
+        case SgMesh::CYLINDER:
+            {
+                primitiveType.select("Cylinder");
+                const SgMesh::Cylinder& params = mesh->primitive<SgMesh::Cylinder>();
+                primitiveRadius = params.radius;
+                primitiveHeight = params.height;
+            }
+            break;
+        case SgMesh::CONE:
+            {
+                primitiveType.select("Cone");
+                const SgMesh::Cone& params = mesh->primitive<SgMesh::Cone>();
+                primitiveRadius = params.radius;
+                primitiveHeight = params.height;
+            }
+            break;
+        }
+        SgMaterial *material = shape->material();
+        primitiveColor = material->diffuseColor();
+    }
+    self->setName(primitiveType.selectedSymbol());
 
     attachPositionDragger();
 
@@ -259,7 +313,7 @@ void PrimitiveShapeItemImpl::onUpdated()
         sceneLink->removeChild(shape);
         shape = NULL;
     }
-    shape = new SgShape;
+    SgShape *shape = new SgShape;
     SgMaterial* material = new SgMaterial;
     material->setDiffuseColor(primitiveColor);
     material->setEmissiveColor(Vector3f::Zero());
@@ -309,7 +363,6 @@ VRMLNodePtr PrimitiveShapeItemImpl::toVRML()
     trans->rotation = self->rotation;
     VRMLShapePtr shape;
     shape = new VRMLShape();
-    trans->children.push_back(shape);
     string pt(primitiveType.selectedSymbol());
     if (pt == "Box") {
         VRMLBoxPtr box = new VRMLBox();
@@ -343,6 +396,7 @@ VRMLNodePtr PrimitiveShapeItemImpl::toVRML()
     VRMLAppearancePtr app = new VRMLAppearance();
     app->material = mat;
     shape->appearance = app;
+    trans->children.push_back(shape);
     return trans;
 }
 
@@ -423,7 +477,6 @@ void PrimitiveShapeItem::doPutProperties(PutPropertyFunction& putProperty)
 
 void PrimitiveShapeItemImpl::doPutProperties(PutPropertyFunction& putProperty)
 {
-    ostringstream oss;
     putProperty(_("Primitive type"), primitiveType,
                 boost::bind(&Selection::selectIndex, &primitiveType, _1));
     string pt(primitiveType.selectedSymbol());
@@ -442,7 +495,7 @@ void PrimitiveShapeItemImpl::doPutProperties(PutPropertyFunction& putProperty)
     if (pt == "Sphere") {
         putProperty.decimals(4)(_("Sphere radius"), primitiveRadius, changeProperty(primitiveRadius));
     }
-    oss.str("");
+    ostringstream oss;
     oss << primitiveColor;
     putProperty(_("Color"), oss.str(),
                 boost::bind(&PrimitiveShapeItemImpl::setPrimitiveColor, this, _1));

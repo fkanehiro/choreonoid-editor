@@ -191,15 +191,7 @@ void LinkItemImpl::init()
     visualizeMass = false;
 
     if(self->name().size() == 0){
-        SgGroup* group = dynamic_cast<SgGroup*>(link->shape());
-        if(group && group->numChildObjects() > 0){
-            SgNode* node = group->child(0);
-            if(node->name().size() != 0){
-                self->setName(node->name());
-            }else{
-                self->setName(link->name() + "_LINK");
-            }
-        }
+        self->setName(link->name() + "_LINK");
     }
 
     attachPositionDragger();

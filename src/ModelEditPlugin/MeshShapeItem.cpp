@@ -63,6 +63,7 @@ public:
     Connection conSelectUpdate;
 
     MeshShapeItemImpl(MeshShapeItem* self);
+    MeshShapeItemImpl(MeshShapeItem* self, SgNode *shape_, const std::string &url);
     MeshShapeItemImpl(MeshShapeItem* self, const MeshShapeItemImpl& org);
     ~MeshShapeItemImpl();
     void doAssign(Item* srcItem);
@@ -101,11 +102,25 @@ MeshShapeItem::MeshShapeItem()
     impl = new MeshShapeItemImpl(this);
 }
 
+MeshShapeItem::MeshShapeItem(const Vector3& translation_, const Matrix3& rotation_,
+                             SgNode *shape, const std::string& url)
+{
+    translation = translation_;
+    rotation = rotation_;
+    impl = new MeshShapeItemImpl(this, shape, url);
+}
 
 MeshShapeItemImpl::MeshShapeItemImpl(MeshShapeItem* self)
-    : self(self)
+    : self(self), shape(NULL)
 {
     init();
+}
+
+
+MeshShapeItemImpl::MeshShapeItemImpl(MeshShapeItem* self, SgNode *shape_, const std::string &url)
+    : self(self), path(url), shape(shape_)
+{
+     init();
 }
 
 
@@ -117,7 +132,7 @@ MeshShapeItem::MeshShapeItem(const MeshShapeItem& org)
 
 
 MeshShapeItemImpl::MeshShapeItemImpl(MeshShapeItem* self, const MeshShapeItemImpl& org)
-    : self(self)
+    : self(self), shape(org.shape)
 {
     init();
 }
@@ -152,7 +167,21 @@ void MeshShapeItemImpl::doAssign(Item* srcItem)
 void MeshShapeItemImpl::init()
 {
     sceneLink = new SgPosTransform();
-    shape = NULL;
+    if (shape){
+        sceneLink->addChildOnce(shape);
+    }
+    if (path != ""){
+        std::string name = path;
+        if (name.rfind(".") != std::string::npos){
+            name = name.substr(0, name.rfind("."));
+        }
+        if (name.rfind("/") != std::string::npos){
+            name = name.substr(name.rfind("/")+1);
+        }
+        self->setName(name);
+    }else{
+        self->setName("MeshShape");
+    }
 
     attachPositionDragger();
 
@@ -232,16 +261,18 @@ void MeshShapeItemImpl::onUpdated()
 {
     sceneLink->translation() = self->absTranslation;
     sceneLink->rotation() = self->absRotation;
-    if (shape) {
-        sceneLink->removeChild(shape);
-        shape = NULL;
+    if (path != ""){
+        if (shape) {
+            sceneLink->removeChild(shape);
+            shape = NULL;
+        }
+        BodyLoader bodyLoader;
+        BodyPtr newBody = bodyLoader.load(path);
+        if (!newBody) return;
+        shape = newBody->rootLink()->visualShape();
+        sceneLink->addChildOnce(shape);
+        sceneLink->notifyUpdate();
     }
-    BodyLoader bodyLoader;
-    BodyPtr newBody = bodyLoader.load(path);
-    if (!newBody) return;
-    shape = newBody->rootLink()->visualShape();
-    sceneLink->addChildOnce(shape);
-    sceneLink->notifyUpdate();
 }
 
 

@@ -6,16 +6,12 @@
 #define CNOID_EDITMODEL_PLUGIN_PRIMITIVESHAPE_ITEM_H
 
 #include <cnoid/Item>
-#include <cnoid/Body>
-#include <cnoid/Link>
-#include <cnoid/SceneProvider>
 #include <cnoid/VRML>
-#include <cnoid/VRMLBodyLoader>
-#include <boost/optional.hpp>
 #include "EditableModelBase.h"
 #include "exportdecl.h"
 
 namespace cnoid {
+class SgShape;
 
 class PrimitiveShapeItem;
 typedef ref_ptr<PrimitiveShapeItem> PrimitiveShapeItemPtr;
@@ -27,6 +23,8 @@ public:
     static void initializeClass(ExtensionManager* ext);
         
     PrimitiveShapeItem();
+    PrimitiveShapeItem(const Vector3& translation, const Matrix3& rotation,
+                       SgShape *shape);
     PrimitiveShapeItem(const PrimitiveShapeItem& org);
     virtual ~PrimitiveShapeItem();
 
