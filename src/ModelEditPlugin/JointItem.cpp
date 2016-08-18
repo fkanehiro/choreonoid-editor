@@ -178,13 +178,11 @@ void JointItemImpl::init()
     llimit = link->q_lower();
     uvlimit = link->dq_upper();
     lvlimit = link->dq_lower();
-    VRMLJointPtr node;
-    node = new VRMLJoint();  // TODO: at this moment, we use original variable but we have to read this from original VRML
-    gearRatio = node->gearRatio;
-    rotorInertia = node->rotorInertia;
-    rotorResistor = node->rotorResistor;
-    torqueConst = node->torqueConst;
-    encoderPulse = node->encoderPulse;
+    gearRatio = link->info<double>("gearRatio", 1);
+    rotorInertia = link->info<double>("rotorInertia", 0);
+    rotorResistor = link->info<double>("rotorResistor", 0);
+    torqueConst = link->info<double>("torqueConst", 1);
+    encoderPulse = link->info<double>("encoderPulse", 1);
     
     self->translation = link->b();
     self->rotation = link->Rs();
