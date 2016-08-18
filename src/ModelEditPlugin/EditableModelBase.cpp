@@ -5,7 +5,6 @@
 #include "EditableModelBase.h"
 #include <cnoid/EigenArchive>
 #include <cnoid/Archive>
-#include <cnoid/VRML>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <bitset>

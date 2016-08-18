@@ -3,35 +3,17 @@
 */
 
 #include "JointItem.h"
-#include <cnoid/LeggedBodyHelper>
-#include <cnoid/YAMLReader>
 #include <cnoid/EigenArchive>
 #include <cnoid/Archive>
 #include <cnoid/ItemTreeView>
-#include <cnoid/RootItem>
-#include <cnoid/LazySignal>
-#include <cnoid/LazyCaller>
-#include <cnoid/MessageView>
 #include <cnoid/ItemManager>
-#include <cnoid/OptionManager>
-#include <cnoid/MenuManager>
-#include <cnoid/PutPropertyFunction>
-#include <cnoid/JointPath>
-#include <cnoid/BodyLoader>
-#include <cnoid/BodyState>
 #include <cnoid/VRMLBody>
 #include <cnoid/SceneBody>
-#include <cnoid/SceneShape>
 #include "ModelEditDragger.h"
-#include <cnoid/FileUtil>
 #include <cnoid/MeshGenerator>
 #include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
-#include <bitset>
-#include <deque>
 #include <iostream>
 #include <sstream>
-#include <algorithm>
 #include "gettext.h"
 
 using namespace std;

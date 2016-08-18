@@ -3,39 +3,22 @@
 */
 
 #include "SensorItem.h"
-#include <cnoid/YAMLReader>
 #include <cnoid/EigenArchive>
 #include <cnoid/Archive>
 #include <cnoid/ItemTreeView>
-#include <cnoid/RootItem>
-#include <cnoid/LazySignal>
-#include <cnoid/LazyCaller>
-#include <cnoid/MessageView>
 #include <cnoid/ItemManager>
-#include <cnoid/OptionManager>
-#include <cnoid/MenuManager>
-#include <cnoid/PutPropertyFunction>
-#include <cnoid/JointPath>
-#include <cnoid/BodyLoader>
-#include <cnoid/BodyState>
 #include <cnoid/SceneBody>
-#include <cnoid/SceneShape>
 #include <cnoid/Sensor>
 #include <cnoid/Camera>
 #include <cnoid/RangeSensor>
 #include <cnoid/VRMLBody>
 #include "ModelEditDragger.h"
 #include "JointItem.h"
-#include <cnoid/FileUtil>
 #include <cnoid/MeshNormalGenerator>
 #include <cnoid/MeshGenerator>
 #include <cnoid/RangeCamera>
 #include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
-#include <bitset>
-#include <deque>
 #include <iostream>
-#include <algorithm>
 #include "gettext.h"
 
 using namespace std;

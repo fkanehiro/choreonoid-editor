@@ -7,6 +7,7 @@
 
 #include <cnoid/Item>
 #include <cnoid/VRML>
+#include <cnoid/SceneProvider>
 #include "EditableModelBase.h"
 #include "exportdecl.h"
 
