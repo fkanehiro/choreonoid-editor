@@ -271,9 +271,11 @@ void createShapeItems(LinkItem *linkItem, SgNode *snode, VRMLNode *vnode,
         SgGroup *group = dynamic_cast<SgGroup *>(snode);
         if (!group){
             std::cerr << "error(1) in createShapeItems" << std::endl;
+            return;
         }
         if (group->numChildren()!=1) {
             std::cerr << "error(2) in createShapeItems" << std::endl;
+            return;
         }
         SgPosTransform *strans = dynamic_cast<SgPosTransform *>(group->child(0));
         if (strans){ // This means link->Rs() is not identity matrix
@@ -281,15 +283,18 @@ void createShapeItems(LinkItem *linkItem, SgNode *snode, VRMLNode *vnode,
             rotation = rotation*strans->rotation();
             if (strans->numChildren() != 1){
                 std::cerr << "error(7) in createShapeItems" << std::endl;
+                return;
             }
             group = strans;
         }
         group = dynamic_cast<SgGroup *>(group->child(0));
         if (!group){
             std::cerr << "error(3) in createShapeItems" << std::endl;
+            return;
         }
         if (group->numChildren() != children.size()){
             std::cerr << "error(6) in createShapeItems" << std::endl;
+            return;
         }
         for (unsigned int i=0; i<children.size(); i++){
             createShapeItems(linkItem, group->child(i), children[i].get(), translation, rotation);
@@ -303,9 +308,11 @@ void createShapeItems(LinkItem *linkItem, SgNode *snode, VRMLNode *vnode,
         SgPosTransform *strans = dynamic_cast<SgPosTransform *>(snode);
         if (!strans){
             std::cerr << "error(4) in createShapeItems" << std::endl;
+            return;
         }
         if (vtrans->countChildren() != strans->numChildren()){
             std::cerr << "error(5) in createShapeItems" << std::endl;
+            return;
         }
         translation = rotation*strans->translation() + translation;
         rotation = rotation*strans->rotation();
@@ -322,6 +329,7 @@ void createShapeItems(LinkItem *linkItem, SgNode *snode, VRMLNode *vnode,
         SgShape *sshape = dynamic_cast<SgShape *>(snode);
         if (!sshape){
             std::cerr << "error in createShapeItems" << std::endl;
+            return;
         }
         SgMesh *mesh = sshape->mesh();
         if (mesh->primitiveType() != SgMesh::MESH){
