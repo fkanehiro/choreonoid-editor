@@ -255,7 +255,7 @@ void LinkItemImpl::onUpdated()
         sceneLink->setVisible(false);
         // generate CoM ball
         massShape = new SgPosTransform;
-        SgShapePtr shape = new SgShape;
+        shape = new SgShape;
         SgMaterialPtr commaterial = new SgMaterial;
         commaterial->setDiffuseColor(Vector3f(1.0f, 0.0f, 0.0f));
         commaterial->setEmissiveColor(Vector3f::Zero());

@@ -296,7 +296,7 @@ void PrimitiveShapeItemImpl::onUpdated()
         sceneLink->removeChild(shape);
         shape = NULL;
     }
-    SgShape *shape = new SgShape;
+    shape = new SgShape;
     SgMaterial* material = new SgMaterial;
     material->setDiffuseColor(primitiveColor);
     material->setEmissiveColor(Vector3f::Zero());
