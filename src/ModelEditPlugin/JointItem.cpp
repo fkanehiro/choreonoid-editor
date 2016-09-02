@@ -36,7 +36,7 @@ class JointItemImpl
 {
 public:
     JointItem* self;
-    Link* link;
+    LinkPtr link;
     int jointId;
     Selection jointType;
     Vector3 jointAxis;

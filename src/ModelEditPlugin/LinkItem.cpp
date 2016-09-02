@@ -39,7 +39,7 @@ class LinkItemImpl
 {
 public:
     LinkItem* self;
-    Link* link;
+    LinkPtr link;
     double mass;
     Vector3 centerOfMass;
     Matrix3 momentsOfInertia;
