@@ -482,6 +482,8 @@ bool EditableModelItemImpl::saveModelFile(const std::string& filename)
 
     writer->writeOpenHRPPROTOs();
     writer->writeNode(toVRML());
+
+    return true;
 }
 
 
@@ -497,6 +499,7 @@ bool EditableModelItemImpl::saveModelFileURDF(const std::string& filename)
     of.open(filename.c_str(), std::ios::out);
     of << toURDF();
     of.close();
+    return true;
 }
 
 
@@ -516,6 +519,7 @@ bool EditableModelItemImpl::saveModelFileSDF(const std::string& filename)
     of << robot->ToString();
     cout << robot->ToString() << endl;
     of.close();
+    return true;
 }
 
 
