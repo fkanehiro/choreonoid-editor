@@ -21,8 +21,8 @@ public:
     VRMLNodePtr originalNode;
     Vector3 translation, absTranslation;
     Matrix3 rotation, absRotation;
-    virtual VRMLNodePtr toVRML() {};
-    virtual std::string toURDF() {};
+    virtual VRMLNodePtr toVRML() { return NULL; };
+    virtual std::string toURDF() { return ""; };
     bool onTranslationChanged(const std::string& value);
     bool onRotationChanged(const std::string& value);
     bool onRotationAxisChanged(const std::string& value);
