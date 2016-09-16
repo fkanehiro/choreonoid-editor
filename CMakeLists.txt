@@ -7,6 +7,11 @@ include(CheckIncludeFiles)
 
 project(ChoreonoidEditor)
 
+if(UNIX)
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  add_definitions("-pthread")
+endif()
+
 pkg_check_modules(CHOREONOID choreonoid)
 include_directories(${CHOREONOID_INCLUDE_DIRS})
 link_directories(${CHOREONOID_LIBRARY_DIRS})
