@@ -111,10 +111,10 @@ bool EditableModelBase::onRotationAxisChanged(const std::string& value)
     }
     SFRotation rot;
     SFRotation::Vector3& axis = rot.axis();
-    axis[0] = v[1];
-    axis[1] = v[2];
-    axis[2] = v[3];
-    rot.angle() = v[0];
+    axis[0] = v[0];
+    axis[1] = v[1];
+    axis[2] = v[2];
+    rot.angle() = v[3];
 
     double size = axis.norm();
     if(size < 1.0e-6){
