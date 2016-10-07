@@ -167,7 +167,11 @@ void JointItemImpl::init()
     encoderPulse = link->info<double>("encoderPulse", 1);
     
     self->translation = link->b();
-    self->rotation = link->Rs();
+    if (link->parent()){
+        self->rotation = link->Rs();
+    }else{
+        self->rotation = link->R();
+    }
     sceneLink = new SceneLink(new Link());
 
     if (self->name().size() == 0)
