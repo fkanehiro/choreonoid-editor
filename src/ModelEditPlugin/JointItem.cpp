@@ -166,10 +166,11 @@ void JointItemImpl::init()
     torqueConst = link->info<double>("torqueConst", 1);
     encoderPulse = link->info<double>("encoderPulse", 1);
     
-    self->translation = link->b();
     if (link->parent()){
-        self->rotation = link->Rs();
+        self->translation = link->parent()->Rs().transpose()*link->b();
+        self->rotation = link->parent()->Rs().transpose()*link->Rs();
     }else{
+        self->translation = link->b();
         self->rotation = link->R();
     }
     sceneLink = new SceneLink(new Link());
